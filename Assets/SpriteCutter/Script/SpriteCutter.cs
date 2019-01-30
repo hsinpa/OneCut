@@ -1,18 +1,19 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class SpriteCutter : MonoBehaviour {
 
     private Texture2D tex;
     private Sprite generateSprite;
     private SpriteRenderer sr;
-    private List<Vector2> intersectionPoint;
+    private List<Vector2> intersectionPoints;
 
     void Start()
     {
         sr = GetComponent<SpriteRenderer>();
-        intersectionPoint = new List<Vector2>();
+        intersectionPoints = new List<Vector2>();
         var pix = sr.sprite.texture.GetPixels32();
         //System.Array.Reverse(pix);
 
@@ -62,7 +63,7 @@ public class SpriteCutter : MonoBehaviour {
 
     public void FindIntersection(Vector2 p_point1, Vector2 p_point2)
     {
-        intersectionPoint.Clear();
+        intersectionPoints.Clear();
         Sprite sprite = sr.sprite;
 
         ushort[] triangles = sprite.triangles;
@@ -83,17 +84,43 @@ public class SpriteCutter : MonoBehaviour {
 
             AddIntersectPoint(pointA, pointB, p_point1, p_point2);
             AddIntersectPoint(pointB, pointC, p_point1, p_point2);
-            AddIntersectPoint(pointC, pointC, p_point1, p_point2);
+            AddIntersectPoint(pointC, pointA, p_point1, p_point2);
         }
+
+        intersectionPoints = SortIntersectionPoint(intersectionPoints, (p_point2 - p_point1).normalized );
+
+        for (int i = 0; i < intersectionPoints.Count; i++)
+        {
+            Debug.Log(intersectionPoints[i]);
+        }
+    }
+
+        void OnDrawGizmosSelected() {
+            // Draw a yellow sphere at the transform's position
+            Gizmos.color = Color.yellow;
+            for (int i = 0; i < intersectionPoints.Count; i++) {
+                Gizmos.DrawSphere(intersectionPoints[i], 0.05f);
+
+                //StartCoroutine(DoSomethingAfterDelay(i, delegate {
+                //    Gizmos.DrawSphere(intersectionPoint[i], 0.05f);
+                //}));
+            }
+        }
+
+    private List<Vector2> SortIntersectionPoint(List<Vector2> unsortPoints, Vector2 cut_direction) {
+        cut_direction = cut_direction * cut_direction;
+        bool isSortByX = (cut_direction.x > cut_direction.y);
+
+        return unsortPoints.OrderBy(x => (isSortByX) ? x.x : x.y).ToList();
     }
 
     private void AddIntersectPoint(Vector2 p_line1A, Vector2 p_line1B, Vector2 p_line2A, Vector2 p_line2B) {
         bool isIntersect = MathUtility.Line.doIntersect(p_line1A, p_line1B, p_line2A, p_line2B);
         if (isIntersect) {
             Vector2 intersectPoint = MathUtility.Line.lineLineIntersection(p_line1A, p_line1B, p_line2A, p_line2B);
-            if (intersectPoint != Vector2.positiveInfinity) {
-                intersectionPoint.Add(intersectPoint);
-                Debug.Log("intersectPoint " + intersectPoint);
+            if (intersectPoint != Vector2.positiveInfinity && !intersectionPoints.Contains(intersectPoint)) {
+                intersectionPoints.Add(intersectPoint);
+                //Debug.Log("intersectPoint " + intersectPoint);
             }
         }
     }
@@ -128,6 +155,13 @@ public class SpriteCutter : MonoBehaviour {
         }
         //Override the geometry with the new vertices
         sprite.OverrideGeometry(spriteVertices, sprite.triangles);
+    }
+
+    IEnumerator DoSomethingAfterDelay(float time, System.Action callback) {
+        yield return new WaitForSeconds(time);
+        if (callback != null)
+            callback();
+
     }
 
 

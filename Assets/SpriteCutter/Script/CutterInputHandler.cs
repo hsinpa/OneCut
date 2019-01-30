@@ -49,6 +49,9 @@ public class CutterInputHandler : MonoBehaviour {
         if (hit2d.Length > 0) {
             SpriteCutter spriteCutter = hit2d[0].collider.GetComponent<SpriteCutter>();
             spriteCutter.FindIntersection(mouseDownWorld, mouseUpWorld);
+
+            
+            
         }
 
         //for (int i = 0; i < hit2d.Length; i++)
