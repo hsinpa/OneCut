@@ -92,5 +92,31 @@ namespace MathUtility
             }
         }
 
+        public static System.Func<float, float> CalculateLinearRegressionX(Vector2 p_point1, Vector2 p_point2)
+        {
+            float m = CalculateSlopeM(p_point1, p_point2);
+            float b = CalculateSlopeB(p_point1, m);
+
+            return (y) => (y / m) - b;
+        }
+
+        public static System.Func<float, float> CalculateLinearRegressionY(Vector2 p_point1, Vector2 p_point2) {
+            float m = CalculateSlopeM(p_point1, p_point2);
+            float b = CalculateSlopeB(p_point1, m);
+
+            return (x) => (m*x) + b;
+        }
+
+        public static float CalculateSlopeM(Vector2 p_point1, Vector2 p_point2) {
+            return (p_point2.y - p_point1.y) / (p_point2.x - p_point1.x);
+        }
+
+        public static float CalculateSlopeB(Vector2 point, float m)
+        {
+            return -(point.x * m) + point.y;
+        }
+
+
+
     }
 }
