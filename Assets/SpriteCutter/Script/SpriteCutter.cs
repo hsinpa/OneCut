@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using SC.Math;
 
 public class SpriteCutter : MonoBehaviour {
 
@@ -12,6 +13,8 @@ public class SpriteCutter : MonoBehaviour {
 
     private List<Vector2> verticeSegmentOne;
     private List<Vector2> verticeSegmentTwo;
+
+    private List<Triangle> triangles = new List<Triangle>();
 
     void Start()
     {
@@ -28,6 +31,33 @@ public class SpriteCutter : MonoBehaviour {
         generateSprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
 
         sr.sprite = generateSprite;
+
+        this.triangles = FormTriangle(sr.sprite);
+    }
+
+    private List<Triangle> FormTriangle(Sprite p_sprite) {
+
+        List<Triangle> triangles = new List<Triangle>();
+        ushort[] raw_triangles = p_sprite.triangles;
+        Vector2[] vertices = p_sprite.vertices;
+
+        int a, b, c;
+        for (int i = 0; i < raw_triangles.Length; i = i + 3)
+        {
+            a = raw_triangles[i];
+            b = raw_triangles[i + 1];
+            c = raw_triangles[i + 2];
+
+            List<Vector2> nodes = new List<Vector2> { vertices[a], vertices[b], vertices[c] };
+            List<TrigPairs> pairs = new List<TrigPairs> { new TrigPairs(vertices[a], vertices[b]),
+                                                        new TrigPairs(vertices[b], vertices[c]),
+                                                        new TrigPairs(vertices[c], vertices[a])
+                                                    };
+
+            triangles.Add( new Triangle(nodes, pairs) );
+        }
+
+        return null;
     }
 
     void OnGUI()
@@ -53,7 +83,6 @@ public class SpriteCutter : MonoBehaviour {
             a = triangles[i];
             b = triangles[i + 1];
             c = triangles[i + 2];
-
 
 
             Debug.Log(vertices[a] + ", " + vertices[b]);
