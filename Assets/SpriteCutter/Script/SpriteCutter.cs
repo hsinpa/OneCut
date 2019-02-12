@@ -15,6 +15,8 @@ public class SpriteCutter : MonoBehaviour {
     private List<Vector2> verticeSegmentTwo;
 
     private List<Triangle> triangles = new List<Triangle>();
+    private List<Triangle> segmentTrigA = new List<Triangle>();
+    private List<Triangle> segmentTrigB = new List<Triangle>();
 
     void Start()
     {
@@ -97,36 +99,52 @@ public class SpriteCutter : MonoBehaviour {
     {
         intersectionPoints.Clear();
         Sprite sprite = sr.sprite;
+        Vector2[] vertices = sprite.vertices;
         VerticesSegmentor verticesSegmentor = new VerticesSegmentor(p_point1, p_point2);
 
-        ushort[] triangles = sprite.triangles;
-        Vector2[] vertices = sprite.vertices;
-        int a, b, c;
-        Vector2 currentPos = new Vector2(transform.position.x, transform.position.y);
-        // draw the triangles using grabbed vertices
-        for (int i = 0; i < triangles.Length; i = i + 3)
-        {
-            a = triangles[i];
-            b = triangles[i + 1];
-            c = triangles[i + 2];
+        for (int i = 0; i < this.triangles.Count; i++) {
+            if (this.triangles[i].pairs.Count == 3) {
+                HandleTrigIntersection(this.triangles[i], 0, p_point1, p_point2);
+                HandleTrigIntersection(this.triangles[i], 1, p_point1, p_point2);
+                HandleTrigIntersection(this.triangles[i], 2, p_point1, p_point2);
+            }
 
-            vertices[a] = currentPos + vertices[a];
-            vertices[b] = currentPos + vertices[b];
-            vertices[c] = currentPos + vertices[c];
+            //Process Segmentation
+            //Complete Trig Segmentation
 
 
-            AddIntersectPoint(vertices[a], vertices[b], p_point1, p_point2);
-            AddIntersectPoint(vertices[b], vertices[c], p_point1, p_point2);
-            AddIntersectPoint(vertices[c], vertices[a], p_point1, p_point2);
+            //Broken Trig Segmentation
+            
+
         }
 
+        //Visualize Debugging arrangement
         intersectionPoints = SortIntersectionPoint(intersectionPoints, (p_point2 - p_point1).normalized);
         ResegmentVertices(vertices, verticesSegmentor);
 
-        //for (int i = 0; i < intersectionPoints.Count; i++)
+        //ushort[] triangles = sprite.triangles;
+        //Vector2[] vertices = sprite.vertices;
+        //int a, b, c;
+        //Vector2 currentPos = new Vector2(transform.position.x, transform.position.y);
+        //// draw the triangles using grabbed vertices
+        //for (int i = 0; i < triangles.Length; i = i + 3)
         //{
-        //    Debug.Log(intersectionPoints[i]);
+        //    a = triangles[i];
+        //    b = triangles[i + 1];
+        //    c = triangles[i + 2];
+
+        //    vertices[a] = currentPos + vertices[a];
+        //    vertices[b] = currentPos + vertices[b];
+        //    vertices[c] = currentPos + vertices[c];
+
+
+        //    AddIntersectPoint(vertices[a], vertices[b], p_point1, p_point2);
+        //    AddIntersectPoint(vertices[b], vertices[c], p_point1, p_point2);
+        //    AddIntersectPoint(vertices[c], vertices[a], p_point1, p_point2);
         //}
+
+        //intersectionPoints = SortIntersectionPoint(intersectionPoints, (p_point2 - p_point1).normalized);
+        //ResegmentVertices(vertices, verticesSegmentor);
     }
 
     void OnDrawGizmosSelected() {
@@ -185,15 +203,34 @@ public class SpriteCutter : MonoBehaviour {
         return unsortPoints.OrderBy(x => (isSortByX) ? x.x : x.y).ToList();
     }
 
-    private void AddIntersectPoint(Vector2 p_line1A, Vector2 p_line1B, Vector2 p_line2A, Vector2 p_line2B) {
+    private void HandleTrigIntersection(Triangle triangle, int pair_index, Vector2 p_pointA, Vector2 p_pointB) {
+
+        Vector2 point = AddIntersectPoint(
+            triangle.pairs[pair_index].nodeA,
+            triangle.pairs[pair_index].nodeB,
+            p_pointA, p_pointB
+        );
+
+        //Intersection has occur
+        if (point != Vector2.positiveInfinity) {
+
+        }
+    }
+
+    private Vector2 AddIntersectPoint(Vector2 p_line1A, Vector2 p_line1B, Vector2 p_line2A, Vector2 p_line2B) {
         bool isIntersect = MathUtility.Line.doIntersect(p_line1A, p_line1B, p_line2A, p_line2B);
         if (isIntersect) {
             Vector2 intersectPoint = MathUtility.Line.lineLineIntersection(p_line1A, p_line1B, p_line2A, p_line2B);
-            if (intersectPoint != Vector2.positiveInfinity && !intersectionPoints.Contains(intersectPoint)) {
-                intersectionPoints.Add(intersectPoint);
-                //Debug.Log("intersectPoint " + intersectPoint);
+            if (intersectPoint != Vector2.positiveInfinity) {
+
+                if (!intersectionPoints.Contains(intersectPoint))
+                    intersectionPoints.Add(intersectPoint);
+
+                return intersectPoint;
             }
         }
+
+        return Vector2.positiveInfinity;
     }
 
     // Edit the vertices obtained from the sprite.  Use OverrideGeometry to

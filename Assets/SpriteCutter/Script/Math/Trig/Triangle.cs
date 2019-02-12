@@ -6,7 +6,13 @@ namespace SC.Math {
     public class Triangle
     {
         private List<Vector2> nodes;
-        private List<TrigPairs> pairs;
+        public List<TrigPairs> pairs;
+
+        public bool isValid {
+            get {
+                return (pairs.Count == 3);
+            }
+        }
 
         public float area {
             get {
@@ -20,6 +26,12 @@ namespace SC.Math {
             this.pairs = pairs;
         }
 
+        public Triangle[] Split() {
+
+
+            return null;
+        }
+
         private float GetArea(List<Vector2> nodes)
         {
             if (nodes != null && nodes.Count >= 3) {
@@ -30,6 +42,24 @@ namespace SC.Math {
                 return Mathf.Sqrt(p * (p - a) * (p - b) * (p - c));
             }
             return 0;
+        }
+
+        public struct Fragment {
+            public Vector2 node;
+            public string segment_name;
+
+            public enum Type {
+                Original,
+                Cutted
+            }
+
+            public Type type;
+
+            public Fragment(Vector2 node, string segment_name, Type type) {
+                this.node = node;
+                this.segment_name = segment_name;
+                this.type = type;
+            }
         }
 
     }
