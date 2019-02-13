@@ -59,7 +59,7 @@ public class SpriteCutter : MonoBehaviour {
             triangles.Add( new Triangle(nodes, pairs) );
         }
 
-        return null;
+        return triangles;
     }
 
     void OnGUI()

@@ -1,12 +1,18 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 namespace SC.Math {
     public class Triangle
     {
+        public string segmentID;
         private List<Vector2> nodes;
         public List<TrigPairs> pairs;
+
+        private List<Fragment> fragments;
+
+
 
         public bool isValid {
             get {
@@ -24,12 +30,24 @@ namespace SC.Math {
         {
             this.nodes = nodes;
             this.pairs = pairs;
+
+            this.segmentID = "trig";
         }
 
         public Triangle[] Split() {
 
 
             return null;
+        }
+
+        public void AddFragment(Fragment.Type p_fragmentType, Vector2 node) {
+            if (p_fragmentType == Fragment.Type.Original)
+            {
+                nodes.Remove(node);
+                int findPairIndex = pairs.FindIndex(x => x.nodeA == node || x.nodeB == node);
+                if (findPairIndex >= 0)
+                    pairs.Remove(pairs[findPairIndex]);
+            }
         }
 
         private float GetArea(List<Vector2> nodes)
@@ -43,6 +61,8 @@ namespace SC.Math {
             }
             return 0;
         }
+
+       
 
         public struct Fragment {
             public Vector2 node;
