@@ -7,6 +7,7 @@ public class VerticesSegmentor {
     private bool isHorizontal;
     private System.Func<float, float> segmentEquation;
 
+
     public VerticesSegmentor(Vector2 point1, Vector2 point2)
     {
         float slope = Line.CalculateSlopeM(point1, point2);

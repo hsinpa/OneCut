@@ -104,9 +104,9 @@ public class SpriteCutter : MonoBehaviour {
 
         for (int i = 0; i < this.triangles.Count; i++) {
             if (this.triangles[i].pairs.Count == 3) {
-                HandleTrigIntersection(this.triangles[i], 0, p_point1, p_point2);
-                HandleTrigIntersection(this.triangles[i], 1, p_point1, p_point2);
-                HandleTrigIntersection(this.triangles[i], 2, p_point1, p_point2);
+                //HandleTrigIntersection(this.triangles[i], 0, p_point1, p_point2);
+                //HandleTrigIntersection(this.triangles[i], 1, p_point1, p_point2);
+                //HandleTrigIntersection(this.triangles[i], 2, p_point1, p_point2);
             }
 
             //Process Segmentation
@@ -203,18 +203,38 @@ public class SpriteCutter : MonoBehaviour {
         return unsortPoints.OrderBy(x => (isSortByX) ? x.x : x.y).ToList();
     }
 
-    private void HandleTrigIntersection(Triangle triangle, int pair_index, Vector2 p_pointA, Vector2 p_pointB) {
+    private void HandleTrigIntersection(Triangle triangle, VerticesSegmentor verticesSegmentor, Vector2 p_pointA, Vector2 p_pointB) {
 
-        Vector2 point = AddIntersectPoint(
-            triangle.pairs[pair_index].nodeA,
-            triangle.pairs[pair_index].nodeB,
-            p_pointA, p_pointB
-        );
+        for (int i = triangle.pairs.Count - 1; i >= 0; i--)
+        {
+            TrigPairs pair = triangle.pairs[i];
 
-        //Intersection has occur
-        if (point != Vector2.positiveInfinity) {
+            Vector2 point = AddIntersectPoint(
+                pair.nodeA,
+                pair.nodeB,
+                p_pointA, p_pointB
+            );
 
+            
+            //Intersection has occur
+            if (point != Vector2.positiveInfinity) {
+                triangle.pairs.RemoveAt(i);
+
+                Triangle.Fragment fragmentA = FindFragment(verticesSegmentor, pair.nodeA);
+                Triangle.Fragment fragmentB = FindFragment(verticesSegmentor, pair.nodeB);
+                Triangle.Fragment fragment = new Triangle.Fragment(point, "", Triangle.Fragment.Type.Cutted);
+
+
+            }
         }
+    }
+
+    private Triangle.Fragment FindFragment(VerticesSegmentor verticesSegmentor, Vector2 vertices) {
+        //Triangle.Fragment fragment = new Triangle.Fragment(vertices,);
+        string segmentID = (verticesSegmentor.CompareInputWithAverageLine(vertices)) ? "A" : "B";
+        Triangle.Fragment fragment = new Triangle.Fragment(vertices, segmentID, Triangle.Fragment.Type.Original);
+
+        return fragment;
     }
 
     private Vector2 AddIntersectPoint(Vector2 p_line1A, Vector2 p_line1B, Vector2 p_line2A, Vector2 p_line2B) {
