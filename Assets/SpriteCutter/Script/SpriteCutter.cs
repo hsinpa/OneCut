@@ -104,23 +104,15 @@ public class SpriteCutter : MonoBehaviour {
 
         for (int i = 0; i < this.triangles.Count; i++) {
             if (this.triangles[i].pairs.Count == 3) {
-                //HandleTrigIntersection(this.triangles[i], 0, p_point1, p_point2);
-                //HandleTrigIntersection(this.triangles[i], 1, p_point1, p_point2);
-                //HandleTrigIntersection(this.triangles[i], 2, p_point1, p_point2);
+                HandleTrigIntersection(this.triangles[i], verticesSegmentor, p_point1, p_point2);
             }
-
-            //Process Segmentation
-            //Complete Trig Segmentation
-
-
-            //Broken Trig Segmentation
-            
-
         }
 
         //Visualize Debugging arrangement
         intersectionPoints = SortIntersectionPoint(intersectionPoints, (p_point2 - p_point1).normalized);
         ResegmentVertices(vertices, verticesSegmentor);
+
+        RebuildTriangle(this.triangles);
 
         //ushort[] triangles = sprite.triangles;
         //Vector2[] vertices = sprite.vertices;
@@ -204,8 +196,9 @@ public class SpriteCutter : MonoBehaviour {
     }
 
     private void HandleTrigIntersection(Triangle triangle, VerticesSegmentor verticesSegmentor, Vector2 p_pointA, Vector2 p_pointB) {
+        int pairNum = triangle.pairs.Count;
 
-        for (int i = triangle.pairs.Count - 1; i >= 0; i--)
+        for (int i = pairNum - 1; i >= 0; i--)
         {
             TrigPairs pair = triangle.pairs[i];
 
@@ -218,15 +211,32 @@ public class SpriteCutter : MonoBehaviour {
             
             //Intersection has occur
             if (point != Vector2.positiveInfinity) {
+
                 triangle.pairs.RemoveAt(i);
 
                 Triangle.Fragment fragmentA = FindFragment(verticesSegmentor, pair.nodeA);
                 Triangle.Fragment fragmentB = FindFragment(verticesSegmentor, pair.nodeB);
-                Triangle.Fragment fragment = new Triangle.Fragment(point, "", Triangle.Fragment.Type.Cutted);
+                Triangle.Fragment fragmentC = new Triangle.Fragment(point, "", Triangle.Fragment.Type.Cutted);
 
-
+                triangle.AddFragment(new Triangle.Fragment[] {fragmentA, fragmentB, fragmentC });
             }
         }
+    }
+
+    private List<Triangle> RebuildTriangle(List<Triangle> p_triangles) {
+        List<Triangle> newTriangles = new List<Triangle>();
+
+        for (int i = 0; i < p_triangles.Count; i++) {
+            if (!p_triangles[i].isValid)
+            {
+                p_triangles[i].Split();
+            }
+            else {
+                newTriangles.Add(p_triangles[i]);
+            }
+        }
+
+        return newTriangles;
     }
 
     private Triangle.Fragment FindFragment(VerticesSegmentor verticesSegmentor, Vector2 vertices) {
