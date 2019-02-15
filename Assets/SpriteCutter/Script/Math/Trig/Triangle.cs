@@ -9,9 +9,23 @@ namespace SC.Math {
         public string segmentID;
         public List<TrigPairs> pairs;
 
-        private List<Fragment> fragments;
-        private List<Vector2> nodes;
 
+        public List<Fragment> fragments {
+            get
+            {
+                return _fragments;
+            }
+        }
+        private List<Fragment> _fragments;
+
+        public List<Vector2> nodes
+        {
+            get
+            {
+                return _nodes;
+            }
+        }
+        private List<Vector2> _nodes;
 
         public bool isValid {
             get {
@@ -21,33 +35,33 @@ namespace SC.Math {
 
         public float area {
             get {
-                return GetArea(nodes);
+                return GetArea(_nodes);
             }
         }
 
         public Triangle(List<Vector2> nodes, List<TrigPairs> pairs)
         {
-            this.nodes = nodes;
+            this._nodes = nodes;
             this.pairs = pairs;
 
             this.segmentID = "trig";
 
-            this.fragments = new List<Fragment>();
+            this._fragments = new List<Fragment>();
         }
 
         public Triangle[] Split() {
-            if (!isValid) {
-                List<Fragment> segmentA = fragments.FindAll(x => x.segment_name == "A");
-                List<Fragment> segmentB = fragments.FindAll(x => x.segment_name == "B");
+            List<Fragment> cuttedNode = _fragments.FindAll(x => x.type == Fragment.Type.Cutted);
+
+            if (!isValid && cuttedNode.Count == 2) {
+                List<Fragment> segmentA = _fragments.FindAll(x => x.segment_name == "A");
+                List<Fragment> segmentB = _fragments.FindAll(x => x.segment_name == "B");
 
                 if (segmentA.Count > 0 && segmentB.Count > 0)
                 {
                     //Start with segmentA
                     if (segmentA.Count == 1) {
-
+                                                    
                     }
-
-
                 }
             }
 
@@ -62,12 +76,12 @@ namespace SC.Math {
 
         public void AddFragment(Fragment p_fragment) {
             //Check if exist
-            if (fragments.FindIndex(x => x.node.Equals(p_fragment.node)) > 0) {
+            if (_fragments.FindIndex(x => x.node.Equals(p_fragment.node)) > 0) {
                 Debug.LogWarning("Find repeat fragment");
                 return;
             };
 
-            fragments.Add(p_fragment);
+            _fragments.Add(p_fragment);
         }
 
         private float GetArea(List<Vector2> nodes)
@@ -82,9 +96,34 @@ namespace SC.Math {
             return 0;
         }
 
-        private CreateTrig()
+        private Triangle[] CreateTrigFromFragment(List<Fragment> p_cuttedFrag, List<Fragment> p_originalFrag)
         {
+            if (p_cuttedFrag.Count != 2) return null;
 
+            if (p_originalFrag.Count == 1)
+            {
+                return new Triangle[] { CreateTrig(new List<Vector2>() { p_cuttedFrag[0].node, p_cuttedFrag[1].node, p_originalFrag[0].node }) };
+            } else if (p_originalFrag.Count == 2)
+            {
+
+            }
+
+            return null;
+        }
+
+        private Triangle CreateTrig( List<Vector2> p_nodes)
+        {
+            if (p_nodes.Count == 3)
+            {
+                return new Triangle(p_nodes, new List<TrigPairs>
+                {
+                    new TrigPairs(p_nodes[0], p_nodes[1]),
+                    new TrigPairs(p_nodes[1], p_nodes[2]),
+                    new TrigPairs(p_nodes[2], p_nodes[0])
+                });
+            }
+
+            return null;
         }
 
         public struct Fragment {
