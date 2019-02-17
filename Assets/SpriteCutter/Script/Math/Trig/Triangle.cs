@@ -29,7 +29,7 @@ namespace SC.Math {
 
         public bool isValid {
             get {
-                return (pairs.Count == 3);
+                return (_fragments.Count <= 0);
             }
         }
 
@@ -76,8 +76,8 @@ namespace SC.Math {
 
         public void AddFragment(Fragment p_fragment) {
             //Check if exist
-            if (_fragments.FindIndex(x => x.node.Equals(p_fragment.node)) > 0) {
-                Debug.LogWarning("Find repeat fragment");
+            if (_fragments.FindIndex(x => x.node.Equals(p_fragment.node)) >= 0) {
+                //Debug.LogWarning("Find repeat fragment");
                 return;
             };
 
@@ -124,6 +124,10 @@ namespace SC.Math {
             }
 
             return null;
+        }
+
+        public void ClearUp() {
+            _fragments.Clear();
         }
 
         public struct Fragment {

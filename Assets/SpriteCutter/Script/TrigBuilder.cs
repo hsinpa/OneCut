@@ -2,30 +2,33 @@
 using System.Collections.Generic;
 using UnityEngine;
 using SC.Math;
+using System.Linq;
 
 public class TrigBuilder {
 
-    public List<Triangle> Build(List<Triangle> p_triangles) {
+    public static List<Triangle> Build(List<Triangle> p_triangles) {
         List<Triangle> newTrigCollect = new List<Triangle>();
 
         for (int i = 0; i < p_triangles.Count; i++) {
 
-            if (p_triangles[i].isValid) {
+            if (p_triangles[i].isValid)
+            {
+
                 newTrigCollect.Add(p_triangles[i]);
                 continue;
             }
-
-
-            
-
+            else {
+                //newTrigCollect.AddRange(Split(p_triangles[i]));
+            }
         }
 
-        return null;
+        return newTrigCollect;
     }
 
-    private List<Triangle> Split(Triangle p_trig) {
+    private static List<Triangle> Split(Triangle p_trig) {
 
         List<Triangle.Fragment> cuttedNode = p_trig.fragments.FindAll(x => x.type == Triangle.Fragment.Type.Cutted);
+        List<Triangle> generatedTrig = new List<Triangle>();
 
         if (!p_trig.isValid && cuttedNode.Count == 2)
         {
@@ -34,35 +37,39 @@ public class TrigBuilder {
 
             if (segmentA.Count > 0 && segmentB.Count > 0)
             {
-                //Start with segmentA
-                if (segmentA.Count == 1)
-                {
+                Triangle[] trigA = CreateTrigFromFragment(cuttedNode, segmentA);
+                Triangle[] trigB = CreateTrigFromFragment(cuttedNode, segmentB);
 
-                }
+                if (trigA != null)
+                    generatedTrig.AddRange(trigA);
 
-
-
+                if (trigB != null)
+                    generatedTrig.AddRange(trigB);
             }
         }
 
+        p_trig.ClearUp();
 
-        return null;
+        return generatedTrig;
     }
 
 
-    private Triangle[] CreateTrigFromFragment(List<Triangle.Fragment> p_cuttedFrag, List<Triangle.Fragment> p_originalFrag)
+    private static Triangle[] CreateTrigFromFragment(List<Triangle.Fragment> p_cuttedFrag, List<Triangle.Fragment> p_originalFrag)
     {
         if (p_cuttedFrag.Count != 2) return null;
 
         if (p_originalFrag.Count == 1)
         {
-            return new Triangle[] { CreateTrig(new List<Vector2>() { p_cuttedFrag[0].node, p_cuttedFrag[1].node, p_originalFrag[0].node }) };
+            return new Triangle[] {  CreateTrig(SortVertices(new List<Vector2>() { p_cuttedFrag[0].node, p_cuttedFrag[1].node, p_originalFrag[0].node } )) };
         }
         else if (p_originalFrag.Count == 2)
         {
             Triangle[] mTriangles = new Triangle[2];
             //First trig
-            mTriangles[0] = CreateTrig(new List<Vector2>() { p_cuttedFrag[0].node, p_cuttedFrag[1].node, p_originalFrag[0].node });
+            List<Vector2> sortedVertices = SortVertices(new List<Vector2>() { p_cuttedFrag[0].node, p_cuttedFrag[1].node, p_originalFrag[0].node });
+            //Debug.Log("p_cuttedFrag[0] " + sortedVertices[0] + ", p_cuttedFrag[1] " + sortedVertices[1] + ", p_originalFrag[0].node" + sortedVertices[2]);
+
+            mTriangles[0] = CreateTrig(sortedVertices);
 
             //Second trig
             for (int p = 0; p < mTriangles[0].pairs.Count; p++)
@@ -74,7 +81,7 @@ public class TrigBuilder {
                                                                                     mTriangles[0].pairs[p].nodeA, mTriangles[0].pairs[p].nodeB);
                     if (intersectPoint != Vector2.positiveInfinity)
                     {
-                        mTriangles[1] = CreateTrig(new List<Vector2>() { p_originalFrag[1].node, p_originalFrag[0].node, p_cuttedFrag[c].node });
+                        mTriangles[1] = CreateTrig( SortVertices (new List<Vector2>() { p_originalFrag[0].node, p_originalFrag[1].node, p_cuttedFrag[c].node }) );
 
                         return mTriangles;
                     }
@@ -86,7 +93,17 @@ public class TrigBuilder {
         return null;
     }
 
-    private Triangle CreateTrig(List<Vector2> p_nodes)
+    /// <summary>
+    /// Sort to Clock-Counter
+    /// </summary>
+    /// <returns></returns>
+    private static List<Vector2> SortVertices(List<Vector2> p_vertices) {
+        return p_vertices.OrderByDescending(v => v.x).ThenBy(v => v.y).ToList();
+    }
+
+
+
+    private static Triangle CreateTrig(List<Vector2> p_nodes)
     {
         if (p_nodes.Count == 3)
         {
@@ -102,7 +119,5 @@ public class TrigBuilder {
     }
 
 
-    private void Reset() {
 
-    }
 }
