@@ -67,25 +67,25 @@ public class TrigBuilder {
             Triangle[] mTriangles = new Triangle[2];
             //First trig
             List<Vector2> sortedVertices = SortVertices(new List<Vector2>() { p_cuttedFrag[0].node, p_cuttedFrag[1].node, p_originalFrag[0].node });
-            //Debug.Log("p_cuttedFrag[0] " + sortedVertices[0] + ", p_cuttedFrag[1] " + sortedVertices[1] + ", p_originalFrag[0].node" + sortedVertices[2]);
 
             mTriangles[0] = CreateTrig(sortedVertices);
 
             //Second trig
-            for (int p = 0; p < mTriangles[0].pairs.Count; p++)
-            {
-                for (int c = 0; c < p_cuttedFrag.Count; c++)
+            for (int c = 0; c < p_cuttedFrag.Count; c++) {
+                bool intersectPointA = MathUtility.Line.doIntersect(p_originalFrag[1].node, p_cuttedFrag[c].node,
+                                                                p_originalFrag[0].node, p_cuttedFrag[0].node);
+
+                bool intersectPointB = MathUtility.Line.doIntersect(p_originalFrag[1].node, p_cuttedFrag[c].node,
+                                                p_originalFrag[0].node, p_cuttedFrag[1].node);
+
+                int int_count = (intersectPointA) ? 1 : 0;
+                int_count += (intersectPointB) ? 1 : 0;
+
+                if (int_count == 1)
                 {
+                    mTriangles[1] = CreateTrig(SortVertices(new List<Vector2>() { p_originalFrag[0].node, p_originalFrag[1].node, p_cuttedFrag[c].node }));
 
-                    Vector2 intersectPoint = MathUtility.Line.lineLineIntersection(p_originalFrag[1].node, p_cuttedFrag[c].node,
-                                                                                    mTriangles[0].pairs[p].nodeA, mTriangles[0].pairs[p].nodeB);
-                    if (intersectPoint != Vector2.positiveInfinity)
-                    {
-                        mTriangles[1] = CreateTrig( SortVertices (new List<Vector2>() { p_originalFrag[0].node, p_originalFrag[1].node, p_cuttedFrag[c].node }) );
-
-                        return mTriangles;
-                    }
-
+                    return mTriangles;
                 }
             }
         }

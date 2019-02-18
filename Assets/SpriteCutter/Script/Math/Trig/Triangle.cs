@@ -49,25 +49,6 @@ namespace SC.Math {
             this._fragments = new List<Fragment>();
         }
 
-        public Triangle[] Split() {
-            List<Fragment> cuttedNode = _fragments.FindAll(x => x.type == Fragment.Type.Cutted);
-
-            if (!isValid && cuttedNode.Count == 2) {
-                List<Fragment> segmentA = _fragments.FindAll(x => x.segment_name == "A");
-                List<Fragment> segmentB = _fragments.FindAll(x => x.segment_name == "B");
-
-                if (segmentA.Count > 0 && segmentB.Count > 0)
-                {
-                    //Start with segmentA
-                    if (segmentA.Count == 1) {
-                                                    
-                    }
-                }
-            }
-
-            return null;
-        }
-
         public void AddFragment(Fragment[] p_fragments)
         {
             foreach (var f in p_fragments)
@@ -94,21 +75,6 @@ namespace SC.Math {
                 return Mathf.Sqrt(p * (p - a) * (p - b) * (p - c));
             }
             return 0;
-        }
-
-        private Triangle[] CreateTrigFromFragment(List<Fragment> p_cuttedFrag, List<Fragment> p_originalFrag)
-        {
-            if (p_cuttedFrag.Count != 2) return null;
-
-            if (p_originalFrag.Count == 1)
-            {
-                return new Triangle[] { CreateTrig(new List<Vector2>() { p_cuttedFrag[0].node, p_cuttedFrag[1].node, p_originalFrag[0].node }) };
-            } else if (p_originalFrag.Count == 2)
-            {
-
-            }
-
-            return null;
         }
 
         private Triangle CreateTrig( List<Vector2> p_nodes)

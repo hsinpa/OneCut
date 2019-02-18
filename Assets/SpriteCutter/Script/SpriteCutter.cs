@@ -86,9 +86,9 @@ public class SpriteCutter : MonoBehaviour {
         for (int i = 0; i < p_triangle.Count; i++)
         {
             //To see these you must view the game in the Scene tab while in Play mode
-            Debug.DrawLine(currentPos + p_triangle[i].nodes[0], currentPos + p_triangle[i].nodes[1], Color.red, 20);
-            Debug.DrawLine(currentPos + p_triangle[i].nodes[1], currentPos + p_triangle[i].nodes[2], Color.red, 20);
-            Debug.DrawLine(currentPos + p_triangle[i].nodes[2], currentPos + p_triangle[i].nodes[0], Color.red, 20);
+            Debug.DrawLine(currentPos + p_triangle[i].nodes[0], currentPos + p_triangle[i].nodes[1], Color.red, 1);
+            Debug.DrawLine(currentPos + p_triangle[i].nodes[1], currentPos + p_triangle[i].nodes[2], Color.red, 1);
+            Debug.DrawLine(currentPos + p_triangle[i].nodes[2], currentPos + p_triangle[i].nodes[0], Color.red, 1);
         }
     }
 
@@ -163,34 +163,6 @@ public class SpriteCutter : MonoBehaviour {
         //Debug.Log("MeshBuilder triangles " + meshBuilder.meshTrig.Length + ", MeshBuilder vertices " + meshBuilder.meshVertices.Length);
 
         ChangeSpriteMesh(sprite, meshBuilder.meshVertices, meshBuilder.meshTrig);
-
-
-
-        //ChangeSpriteMesh(sprite, meshBuilder.meshVertices, meshBuilder.meshTrig);
-
-        //ushort[] triangles = sprite.triangles;
-        //Vector2[] vertices = sprite.vertices;
-        //int a, b, c;
-        //Vector2 currentPos = new Vector2(transform.position.x, transform.position.y);
-        //// draw the triangles using grabbed vertices
-        //for (int i = 0; i < triangles.Length; i = i + 3)
-        //{
-        //    a = triangles[i];
-        //    b = triangles[i + 1];
-        //    c = triangles[i + 2];
-
-        //    vertices[a] = currentPos + vertices[a];
-        //    vertices[b] = currentPos + vertices[b];
-        //    vertices[c] = currentPos + vertices[c];
-
-
-        //    AddIntersectPoint(vertices[a], vertices[b], p_point1, p_point2);
-        //    AddIntersectPoint(vertices[b], vertices[c], p_point1, p_point2);
-        //    AddIntersectPoint(vertices[c], vertices[a], p_point1, p_point2);
-        //}
-
-        //intersectionPoints = SortIntersectionPoint(intersectionPoints, (p_point2 - p_point1).normalized);
-        //ResegmentVertices(vertices, verticesSegmentor);
     }
 
     void OnDrawGizmosSelected() {
@@ -199,7 +171,7 @@ public class SpriteCutter : MonoBehaviour {
             Gizmos.color = Color.yellow;
             for (int i = 0; i < intersectionPoints.Count; i++)
             {
-                Gizmos.DrawSphere(intersectionPoints[i], 0.05f);
+                Gizmos.DrawSphere(intersectionPoints[i], 0.01f);
             }
         }
 
@@ -208,7 +180,7 @@ public class SpriteCutter : MonoBehaviour {
             Gizmos.color = Color.red;
             for (int i = 0; i < verticeSegmentOne.Count; i++)
             {
-                Gizmos.DrawSphere(verticeSegmentOne[i], 0.05f);
+                Gizmos.DrawSphere(verticeSegmentOne[i], 0.03f);
             }
         }
 
@@ -217,7 +189,7 @@ public class SpriteCutter : MonoBehaviour {
             Gizmos.color = Color.green;
             for (int i = 0; i < verticeSegmentTwo.Count; i++)
             {
-                Gizmos.DrawSphere(verticeSegmentTwo[i],0.05f);
+                Gizmos.DrawSphere(verticeSegmentTwo[i],0.03f);
             }
         }
 
@@ -233,12 +205,9 @@ public class SpriteCutter : MonoBehaviour {
                 b = meshBuilder.meshTrig[i + 1];
                 c = meshBuilder.meshTrig[i + 2];
 
-
-                Gizmos.DrawSphere(currentPos + meshBuilder.meshVertices[a], 0.05f);
-                Gizmos.DrawSphere(currentPos + meshBuilder.meshVertices[b], 0.05f);
-                Gizmos.DrawSphere(currentPos + meshBuilder.meshVertices[c], 0.05f);
-
-                //Debug.Log("A " + meshBuilder.meshVertices[a] + ", B " + meshBuilder.meshVertices[b] + ", C " + meshBuilder.meshVertices[c]);
+                Gizmos.DrawSphere(currentPos + meshBuilder.meshVertices[a], 0.01f);
+                Gizmos.DrawSphere(currentPos + meshBuilder.meshVertices[b], 0.01f);
+                Gizmos.DrawSphere(currentPos + meshBuilder.meshVertices[c], 0.01f);
             }
 
         }
@@ -343,11 +312,11 @@ public class SpriteCutter : MonoBehaviour {
 
     private void ChangeSpriteMesh(Sprite p_sprite, Vector2[] p_vertices, ushort[] p_triangles) {
         Sprite sprite = p_sprite;
-        Vector2[] spriteVertices = p_vertices;
+        Vector2[] spriteVertices = new Vector2[p_vertices.Length];
 
-        for (int i = 0; i < spriteVertices.Length; i++)
+        for (int i = 0; i < p_vertices.Length; i++)
         {
-            spriteVertices[i] = VerticesToWorldPos(spriteVertices[i], sprite);
+            spriteVertices[i] = VerticesToWorldPos(p_vertices[i], sprite);
         }
 
         //Override the geometry with the new vertices
