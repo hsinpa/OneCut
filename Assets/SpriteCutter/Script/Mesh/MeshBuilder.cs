@@ -41,13 +41,18 @@ public class MeshBuilder {
         for (int i = 0; i < p_triangles.Count; i++)
         {
             try {
-                ushort v_trig_1 = (ushort) p_verticeIndex.GetIndex(p_triangles[i].nodes[0]);
-                ushort v_trig_2 = (ushort)p_verticeIndex.GetIndex(p_triangles[i].nodes[1]);
-                ushort v_trig_3 = (ushort)p_verticeIndex.GetIndex(p_triangles[i].nodes[2]);
+                ushort a = (ushort) p_verticeIndex.GetIndex(p_triangles[i].nodes[0]);
+                ushort b = (ushort)p_verticeIndex.GetIndex(p_triangles[i].nodes[1]);
+                ushort c = (ushort)p_verticeIndex.GetIndex(p_triangles[i].nodes[2]);
 
-                newMeshTrig[i] = v_trig_1;
-                newMeshTrig[i + 1] = v_trig_2;
-                newMeshTrig[i + 2] = v_trig_3;
+
+                int trigIndex = i * 3;
+
+                newMeshTrig[trigIndex] = a;
+                newMeshTrig[trigIndex + 1] = b;
+                newMeshTrig[trigIndex + 2] = c;
+
+                //Debug.Log("RE_Trig " + a + " Vertices " + p_verticeIndex.vertices[a] + ", Trig " + b + " Vertices " + p_verticeIndex.vertices[b] + ", Trig " + c + " Vertices " + p_verticeIndex.vertices[c]);
 
                 //int _short = p_verticeIndex.GetIndex(p_triangles[i].nodes[n]);
                 //Debug.Log("Int " + _short + ", Short " + (ushort)_short);
@@ -58,7 +63,6 @@ public class MeshBuilder {
             catch {
                 Debug.LogError("p_verticeIndex.VectorToIndex Eror");
             }
-            
         }
 
         return newMeshTrig;
@@ -96,7 +100,7 @@ public class MeshBuilder {
         }
 
         public int GetIndex(Vector2 p_vertices) {
-            string verticeString = p_vertices.ToString();
+            string verticeString = VectorToString(p_vertices);
 
             if (VectorToIndex.ContainsKey(verticeString))
                 return VectorToIndex[verticeString];
@@ -107,9 +111,7 @@ public class MeshBuilder {
         public void AddVertices(Vector2 p_vertices) {
             if (!_vertices.Contains(p_vertices)) {
 
-                //Debug.Log(p_vertices.x + ", " + p_vertices.y);
-                string verticeString = p_vertices.ToString();
-
+                string verticeString =  VectorToString(p_vertices);
                 if (!VectorToIndex.ContainsKey(verticeString)) {
                     _vertices.Add(p_vertices);
                     int c_index = _vertices.Count - 1;
@@ -117,6 +119,10 @@ public class MeshBuilder {
                     VectorToIndex.Add(verticeString, c_index);
                 }
             }
+        }
+
+        private string VectorToString(Vector2 vector) {
+            return vector.x + ", " + vector.y;
         }
     }
 }

@@ -54,6 +54,8 @@ public class SpriteCutter : MonoBehaviour {
             b = raw_triangles[i + 1];
             c = raw_triangles[i + 2];
 
+            //Debug.Log("Trig " + a + " Vertices " + vertices[a] + ", Trig " + b + " Vertices " + vertices[b] + ", Trig " + c + " Vertices " + vertices[c]);
+
             List<Vector2> nodes = new List<Vector2> { vertices[a], vertices[b], vertices[c] };
             List<TrigPairs> pairs = new List<TrigPairs> { new TrigPairs(vertices[a], vertices[b]),
                                                         new TrigPairs(vertices[b], vertices[c]),
@@ -73,6 +75,8 @@ public class SpriteCutter : MonoBehaviour {
             //ChangeSprite();
             //DrawDebug(meshBuilder);
             DrawTriangle(this.triangles);
+
+            ChangeSpriteMesh(sr.sprite, sr.sprite.vertices, sr.sprite.triangles);
         }
     }
 
@@ -136,18 +140,20 @@ public class SpriteCutter : MonoBehaviour {
         Vector2[] vertices = sprite.vertices;
         VerticesSegmentor verticesSegmentor = new VerticesSegmentor(p_point1, p_point2);
 
-        //for (int i = 0; i < exp_trig.Count; i++) {
-        //    if (exp_trig[i].pairs.Count == 3) {
-        //        HandleTrigIntersection(exp_trig[i], verticesSegmentor, p_point1, p_point2);
-        //    }
-        //}
+        for (int i = 0; i < exp_trig.Count; i++)
+        {
+            if (exp_trig[i].pairs.Count == 3)
+            {
+                HandleTrigIntersection(exp_trig[i], verticesSegmentor, p_point1, p_point2);
+            }
+        }
 
         //Visualize Debugging arrangement
         intersectionPoints = SortIntersectionPoint(intersectionPoints, (p_point2 - p_point1).normalized);
         ResegmentVertices(vertices, verticesSegmentor);
 
-        //List<Triangle> newTrigCol = TrigBuilder.Build(this.triangles);
-        meshBuilder = new MeshBuilder(this.triangles);
+        List<Triangle> newTrigCol = TrigBuilder.Build(exp_trig);
+        meshBuilder = new MeshBuilder(newTrigCol);
         //DrawTriangle(this.triangles);
 
         DrawTriangle(meshBuilder.meshVertices, meshBuilder.meshTrig);
@@ -156,7 +162,7 @@ public class SpriteCutter : MonoBehaviour {
         //Debug.Log("triangles " + sprite.triangles.Length + ", vertices " + sprite.vertices.Length);
         //Debug.Log("MeshBuilder triangles " + meshBuilder.meshTrig.Length + ", MeshBuilder vertices " + meshBuilder.meshVertices.Length);
 
-        //ChangeSpriteMesh(sprite, meshBuilder.meshVertices, meshBuilder.meshTrig);
+        ChangeSpriteMesh(sprite, meshBuilder.meshVertices, meshBuilder.meshTrig);
 
 
 

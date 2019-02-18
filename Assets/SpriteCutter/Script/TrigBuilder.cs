@@ -18,7 +18,7 @@ public class TrigBuilder {
                 continue;
             }
             else {
-                //newTrigCollect.AddRange(Split(p_triangles[i]));
+                newTrigCollect.AddRange(Split(p_triangles[i]));
             }
         }
 
