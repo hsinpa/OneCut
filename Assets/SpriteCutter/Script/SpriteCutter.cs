@@ -8,9 +8,10 @@ public class SpriteCutter : MonoBehaviour {
 
     private Texture2D tex;
     private Sprite generateSprite;
+    private Sprite backupSprite;
+
     private SpriteRenderer sr;
     private List<Vector2> intersectionPoints;
-
     private List<Vector2> verticeSegmentOne;
     private List<Vector2> verticeSegmentTwo;
 
@@ -32,6 +33,7 @@ public class SpriteCutter : MonoBehaviour {
         tex.Apply();
 
         generateSprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
+        backupSprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
 
         sr.sprite = generateSprite;
 
@@ -62,7 +64,7 @@ public class SpriteCutter : MonoBehaviour {
                                                         new TrigPairs(vertices[c], vertices[a])
                                                     };
 
-            triangles.Add( new Triangle(nodes, pairs) );
+            triangles.Add(new Triangle(nodes, pairs));
         }
 
         return triangles;
@@ -70,13 +72,13 @@ public class SpriteCutter : MonoBehaviour {
 
     void OnGUI()
     {
-        if (GUI.Button(new Rect(10, 10, 100, 30), "Deform"))
+        if (GUI.Button(new Rect(10, 10, 100, 30), "Rebuild"))
         {
             //ChangeSprite();
             //DrawDebug(meshBuilder);
-            DrawTriangle(this.triangles);
+            //DrawTriangle(this.triangles);
 
-            ChangeSpriteMesh(sr.sprite, sr.sprite.vertices, sr.sprite.triangles);
+            ChangeSpriteMesh(sr.sprite, backupSprite.vertices, backupSprite.triangles);
         }
     }
 
@@ -148,21 +150,27 @@ public class SpriteCutter : MonoBehaviour {
             }
         }
 
-        //Visualize Debugging arrangement
         intersectionPoints = SortIntersectionPoint(intersectionPoints, (p_point2 - p_point1).normalized);
-        ResegmentVertices(vertices, verticesSegmentor);
 
         List<Triangle> newTrigCol = TrigBuilder.Build(exp_trig);
+
+        ResegmentTriangle(newTrigCol, verticesSegmentor);
+
         meshBuilder = new MeshBuilder(newTrigCol);
-        //DrawTriangle(this.triangles);
 
-        DrawTriangle(meshBuilder.meshVertices, meshBuilder.meshTrig);
+        DrawTriangle(segmentTrigA);
+        //DrawTriangle(segmentTrigB);
+
+        //DrawTriangle(meshBuilder.meshVertices, meshBuilder.meshTrig);
+
         //Debug.Log("intersectionPointsLength " + intersectionPoints.Count + ", TriangleLength " + exp_trig.Count + "newTrigColLength " + newTrigCol.Count);
-
         //Debug.Log("triangles " + sprite.triangles.Length + ", vertices " + sprite.vertices.Length);
         //Debug.Log("MeshBuilder triangles " + meshBuilder.meshTrig.Length + ", MeshBuilder vertices " + meshBuilder.meshVertices.Length);
 
         ChangeSpriteMesh(sprite, meshBuilder.meshVertices, meshBuilder.meshTrig);
+
+        ResegmentVertices(meshBuilder.meshVertices, verticesSegmentor);
+
     }
 
     void OnDrawGizmosSelected() {
@@ -189,7 +197,7 @@ public class SpriteCutter : MonoBehaviour {
             Gizmos.color = Color.green;
             for (int i = 0; i < verticeSegmentTwo.Count; i++)
             {
-                Gizmos.DrawSphere(verticeSegmentTwo[i],0.03f);
+                Gizmos.DrawSphere(verticeSegmentTwo[i], 0.04f);
             }
         }
 
@@ -214,24 +222,57 @@ public class SpriteCutter : MonoBehaviour {
 
     }
 
+    private List<Triangle> ResegmentTriangle(List<Triangle> p_triangles, VerticesSegmentor verticesSegmentor)
+    {
+        List<Triangle> segmentOne = new List<Triangle>();
+        List<Triangle> segmentTwo = new List<Triangle>();
+
+        float segmentA_area = 0, segmentB_area = 0;
+
+
+        for (int i = 0; i < p_triangles.Count; i++) {
+            if (verticesSegmentor.CompareInputWithAverageLine(p_triangles[i].center))
+            {
+                p_triangles[i].segmentID = "A";
+                segmentA_area += p_triangles[i].area;
+                segmentOne.Add(p_triangles[i]);
+            }
+            else {
+                p_triangles[i].segmentID = "B";
+                segmentB_area += p_triangles[i].area;
+                segmentTwo.Add(p_triangles[i]);
+            }
+        }
+
+        Debug.Log("segmentA_area " + segmentA_area + ", segmentB_area " + segmentB_area);
+
+        segmentTrigA = segmentOne;
+        segmentTrigB = segmentTwo;
+
+        return (segmentA_area > segmentB_area) ? segmentOne : segmentTwo;
+    }
+
     private void ResegmentVertices(Vector2[] p_vertices, VerticesSegmentor verticesSegmentor)
     {
         List<Vector2> segmentOne = new List<Vector2>();
         List<Vector2> segmentTwo = new List<Vector2>();
 
-        for (int i = 0; i < p_vertices.Length; i++) {
+        for (int i = 0; i < p_vertices.Length; i++)
+        {
             if (verticesSegmentor.CompareInputWithAverageLine(p_vertices[i]))
             {
-                    segmentOne.Add(p_vertices[i]);
+                segmentOne.Add(p_vertices[i]);
             }
-            else {
-                    segmentTwo.Add(p_vertices[i]);
+            else
+            {
+                segmentTwo.Add(p_vertices[i]);
             }
         }
 
-        //verticeSegmentOne = segmentOne;
-        //verticeSegmentTwo = segmentTwo;
+        verticeSegmentOne = segmentOne;
+        verticeSegmentTwo = segmentTwo;
     }
+
 
     private List<Vector2> SortIntersectionPoint(List<Vector2> unsortPoints, Vector2 cut_direction) {
         cut_direction = cut_direction * cut_direction;

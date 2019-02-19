@@ -30,9 +30,6 @@ public class MeshBuilder {
 
         _meshTrig = GetTrigStructure(this._triangles, verticesIndex);
         _meshVertices = verticesIndex.vertices;
-
-        Debug.Log("MeshTrig Number " + _meshTrig.Length);
-        Debug.Log("Vertices Number " + verticesIndex.vertices.Length);
     }
 
     private ushort[] GetTrigStructure(List<Triangle> p_triangles, VerticesIndex p_verticeIndex) {
