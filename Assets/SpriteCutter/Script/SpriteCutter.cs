@@ -152,13 +152,13 @@ public class SpriteCutter : MonoBehaviour {
 
         intersectionPoints = SortIntersectionPoint(intersectionPoints, (p_point2 - p_point1).normalized);
 
-        List<Triangle> newTrigCol = TrigBuilder.Build(exp_trig);
+        //List<Triangle> newTrigCol = TrigBuilder.Build(exp_trig);
 
-        ResegmentTriangle(newTrigCol, verticesSegmentor);
+        //ResegmentTriangle(newTrigCol, verticesSegmentor);
 
-        meshBuilder = new MeshBuilder(newTrigCol);
+        //meshBuilder = new MeshBuilder(newTrigCol);
 
-        DrawTriangle(segmentTrigA);
+       // DrawTriangle(segmentTrigA);
         //DrawTriangle(segmentTrigB);
 
         //DrawTriangle(meshBuilder.meshVertices, meshBuilder.meshTrig);
@@ -167,9 +167,9 @@ public class SpriteCutter : MonoBehaviour {
         //Debug.Log("triangles " + sprite.triangles.Length + ", vertices " + sprite.vertices.Length);
         //Debug.Log("MeshBuilder triangles " + meshBuilder.meshTrig.Length + ", MeshBuilder vertices " + meshBuilder.meshVertices.Length);
 
-        ChangeSpriteMesh(sprite, meshBuilder.meshVertices, meshBuilder.meshTrig);
+        //ChangeSpriteMesh(sprite, meshBuilder.meshVertices, meshBuilder.meshTrig);
 
-        ResegmentVertices(meshBuilder.meshVertices, verticesSegmentor);
+        ResegmentVertices(vertices, verticesSegmentor);
 
     }
 
@@ -179,7 +179,7 @@ public class SpriteCutter : MonoBehaviour {
             Gizmos.color = Color.yellow;
             for (int i = 0; i < intersectionPoints.Count; i++)
             {
-                Gizmos.DrawSphere(intersectionPoints[i], 0.01f);
+                Gizmos.DrawSphere(intersectionPoints[i], 0.02f);
             }
         }
 
@@ -197,7 +197,7 @@ public class SpriteCutter : MonoBehaviour {
             Gizmos.color = Color.green;
             for (int i = 0; i < verticeSegmentTwo.Count; i++)
             {
-                Gizmos.DrawSphere(verticeSegmentTwo[i], 0.04f);
+                Gizmos.DrawSphere(verticeSegmentTwo[i], 0.03f);
             }
         }
 

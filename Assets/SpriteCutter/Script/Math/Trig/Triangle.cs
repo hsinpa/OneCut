@@ -35,7 +35,6 @@ namespace SC.Math {
 
         public Vector2 center {
             get {
-                Debug.Log( "Center " + ((nodes[0] + nodes[1] + nodes[2]) / 3) +", node[0]" + nodes[0] + ", nodes[1]" + nodes[1] + ", nodes[2]" + nodes[2]);
                 return (nodes[0] + nodes[1] + nodes[2] ) / 3 ; 
             }
         }
