@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MathUtility
+namespace SC.Math
 {
     public class Line
     {
@@ -35,7 +35,7 @@ namespace MathUtility
 
         // The main function that returns true if line segment 'p1q1' 
         // and 'p2q2' intersect. 
-        public static bool doIntersect(Vector2 p1, Vector2 q1, Vector2 p2, Vector2 q2)
+        public static bool DoIntersect(Vector2 p1, Vector2 q1, Vector2 p2, Vector2 q2)
             {
             // Find the four orientations needed for general and 
             // special cases 
@@ -64,7 +64,7 @@ namespace MathUtility
             return false; // Doesn't fall in any of the above cases 
         }
 
-        public static Vector2 lineLineIntersection(Vector2 A, Vector2 B, Vector2 C, Vector2 D)
+        public static Vector2 GetLineIntersection(Vector2 A, Vector2 B, Vector2 C, Vector2 D)
         {
             // Line AB represented as a1x + b1y = c1  
             double a1 = B.y - A.y;
@@ -97,7 +97,7 @@ namespace MathUtility
             float m = CalculateSlopeM(p_point1, p_point2);
             float b = CalculateSlopeB(p_point1, m);
 
-            return (y) => (y / m) - b;
+            return (y) => (y - b) / m;
         }
 
         public static System.Func<float, float> CalculateLinearRegressionY(Vector2 p_point1, Vector2 p_point2) {

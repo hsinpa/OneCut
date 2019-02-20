@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using SC.Trig;
 using SC.Math;
 using System.Linq;
 
@@ -72,10 +73,10 @@ public class TrigBuilder {
 
             //Second trig
             for (int c = 0; c < p_cuttedFrag.Count; c++) {
-                bool intersectPointA = MathUtility.Line.doIntersect(p_originalFrag[1].node, p_cuttedFrag[c].node,
+                bool intersectPointA = Line.DoIntersect(p_originalFrag[1].node, p_cuttedFrag[c].node,
                                                                 p_originalFrag[0].node, p_cuttedFrag[0].node);
 
-                bool intersectPointB = MathUtility.Line.doIntersect(p_originalFrag[1].node, p_cuttedFrag[c].node,
+                bool intersectPointB = Line.DoIntersect(p_originalFrag[1].node, p_cuttedFrag[c].node,
                                                 p_originalFrag[0].node, p_cuttedFrag[1].node);
 
                 int int_count = (intersectPointA) ? 1 : 0;

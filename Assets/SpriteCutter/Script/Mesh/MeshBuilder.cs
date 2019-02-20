@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using SC.Math;
+using SC.Trig;
 
 public class MeshBuilder {
 
