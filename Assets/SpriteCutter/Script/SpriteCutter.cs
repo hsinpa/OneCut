@@ -9,12 +9,33 @@ namespace SC.Main {
 
     public class SpriteCutter : MonoBehaviour
     {
+        private static SpriteCutter s_Instance;
+        public static SpriteCutter Instance
+        {
+            get
+            {
+                if (s_Instance != null)
+                {
+                    return s_Instance;
+                }
+
+                s_Instance = FindObjectOfType<SpriteCutter>();
+                if (s_Instance != null)
+                {
+                    return s_Instance;
+                }
+
+                return null;
+            }
+        }
+
+
         private Texture2D tex;
         private Sprite generateSprite;
         private Sprite backupSprite;
 
         private SpriteRenderer sr;
-        private List<Vector2> intersectionPoints;
+        private List<Vector2> intersectionPoints = new List<Vector2>();
         private List<Vector2> verticeSegmentOne;
         private List<Vector2> verticeSegmentTwo;
 
@@ -25,53 +46,148 @@ namespace SC.Main {
 
         void Start()
         {
-            sr = GetComponent<SpriteRenderer>();
-            intersectionPoints = new List<Vector2>();
-            var pix = sr.sprite.texture.GetPixels32();
-            //System.Array.Reverse(pix);
-
-            // Copy the reversed image data to a new texture.
-            tex = new Texture2D(sr.sprite.texture.width, sr.sprite.texture.height);
-            tex.SetPixels32(pix);
-            tex.Apply();
-
-            generateSprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
-            backupSprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
-
-            sr.sprite = generateSprite;
-
-            this.triangles = FormTriangle(sr.sprite);
+            s_Instance = this;
         }
 
-        private List<Triangle> FormTriangle(Sprite p_sprite)
+        #region Core Logic Flow
+
+        public void Cutting(SpriteCutObject p_spriteObj, Vector2 p_point1, Vector2 p_point2)
         {
+            intersectionPoints.Clear();
+            List<Triangle> exp_trig = new List<Triangle>(this.triangles);
 
-            List<Triangle> triangles = new List<Triangle>();
-            ushort[] raw_triangles = p_sprite.triangles;
-            Vector2[] vertices = p_sprite.vertices;
+            Sprite sprite = sr.sprite;
+            Vector2[] vertices = sprite.vertices;
+            VerticesSegmentor verticesSegmentor = new VerticesSegmentor(p_point1, p_point2);
 
-            //Debug.Log("Triangles " + raw_triangles.Length);
-            //Debug.Log("Vertices " + vertices.Length);
-
-            int a, b, c;
-            for (int i = 0; i < raw_triangles.Length; i = i + 3)
+            for (int i = 0; i < exp_trig.Count; i++)
             {
-                a = raw_triangles[i];
-                b = raw_triangles[i + 1];
-                c = raw_triangles[i + 2];
-
-                //Debug.Log("Trig " + a + " Vertices " + vertices[a] + ", Trig " + b + " Vertices " + vertices[b] + ", Trig " + c + " Vertices " + vertices[c]);
-
-                List<Vector2> nodes = new List<Vector2> { vertices[a], vertices[b], vertices[c] };
-                List<TrigPairs> pairs = new List<TrigPairs> { new TrigPairs(vertices[a], vertices[b]),
-                                                        new TrigPairs(vertices[b], vertices[c]),
-                                                        new TrigPairs(vertices[c], vertices[a])
-                                                    };
-
-                triangles.Add(new Triangle(nodes, pairs));
+                if (exp_trig[i].pairs.Count == 3)
+                {
+                    HandleTrigIntersection(exp_trig[i], verticesSegmentor, p_point1, p_point2);
+                }
             }
 
-            return triangles;
+            intersectionPoints = SortIntersectionPoint(intersectionPoints, (p_point2 - p_point1).normalized);
+
+            List<Triangle> newTrigCol = TrigBuilder.Build(exp_trig);
+
+            this.triangles = ResegmentTriangle(newTrigCol, verticesSegmentor);
+
+            meshBuilder = new MeshBuilder(this.triangles);
+
+            ChangeSpriteMesh(sprite, meshBuilder.meshVertices, meshBuilder.meshTrig);
+
+            ResegmentVertices(vertices, verticesSegmentor);
+        }
+
+        private void HandleTrigIntersection(Triangle triangle, VerticesSegmentor verticesSegmentor, Vector2 p_pointA, Vector2 p_pointB)
+        {
+            int pairNum = triangle.pairs.Count;
+
+            for (int i = pairNum - 1; i >= 0; i--)
+            {
+                TrigPairs pair = triangle.pairs[i];
+
+                Vector2 point = AddIntersectPoint(
+                    pair.nodeA,
+                    pair.nodeB,
+                    p_pointA, p_pointB
+                );
+
+                //Intersection has occur
+                if (!point.Equals(Vector2.positiveInfinity))
+                {
+                    Triangle.Fragment fragmentA = FindFragment(verticesSegmentor, pair.nodeA);
+                    Triangle.Fragment fragmentB = FindFragment(verticesSegmentor, pair.nodeB);
+                    Triangle.Fragment fragmentC = new Triangle.Fragment(point, "", Triangle.Fragment.Type.Cutted);
+
+                    triangle.AddFragment(new Triangle.Fragment[] { fragmentA, fragmentB, fragmentC });
+                }
+            }
+        }
+
+        private Triangle.Fragment FindFragment(VerticesSegmentor verticesSegmentor, Vector2 vertices)
+        {
+            //Triangle.Fragment fragment = new Triangle.Fragment(vertices,);
+            string segmentID = (verticesSegmentor.CompareInputWithAverageLine(vertices)) ? "A" : "B";
+            Triangle.Fragment fragment = new Triangle.Fragment(vertices, segmentID, Triangle.Fragment.Type.Original);
+
+            return fragment;
+        }
+
+        private Vector2 AddIntersectPoint(Vector2 p_line1A, Vector2 p_line1B, Vector2 p_line2A, Vector2 p_line2B)
+        {
+            bool isIntersect = Line.DoIntersect(p_line1A, p_line1B, p_line2A, p_line2B);
+
+            if (isIntersect)
+            {
+                Vector2 intersectPoint = Line.GetLineIntersection(p_line1A, p_line1B, p_line2A, p_line2B);
+                if (!intersectPoint.Equals(Vector2.positiveInfinity))
+                {
+
+                    if (!intersectionPoints.Contains(intersectPoint))
+                        intersectionPoints.Add(intersectPoint);
+
+                    return intersectPoint;
+                }
+            }
+
+            return Vector2.positiveInfinity;
+        }
+        #endregion
+
+
+
+        #region Debug Functions
+        void OnDrawGizmosSelected()
+        {
+            // Draw a yellow sphere at the transform's position
+            if (intersectionPoints != null)
+            {
+                Gizmos.color = Color.yellow;
+                for (int i = 0; i < intersectionPoints.Count; i++)
+                {
+                    Gizmos.DrawSphere(intersectionPoints[i], 0.02f);
+                }
+            }
+
+            if (verticeSegmentOne != null)
+            {
+                Gizmos.color = Color.red;
+                for (int i = 0; i < verticeSegmentOne.Count; i++)
+                {
+                    Gizmos.DrawSphere(verticeSegmentOne[i], 0.03f);
+                }
+            }
+
+            if (verticeSegmentTwo != null)
+            {
+                Gizmos.color = Color.green;
+                for (int i = 0; i < verticeSegmentTwo.Count; i++)
+                {
+                    Gizmos.DrawSphere(verticeSegmentTwo[i], 0.03f);
+                }
+            }
+
+            int a, b, c;
+
+            if (meshBuilder != null)
+            {
+                Vector2 currentPos = new Vector2(transform.position.x, transform.position.y);
+                for (int i = 0; i < meshBuilder.meshTrig.Length; i = i + 3)
+                {
+                    Gizmos.color = Color.black;
+
+                    a = meshBuilder.meshTrig[i];
+                    b = meshBuilder.meshTrig[i + 1];
+                    c = meshBuilder.meshTrig[i + 2];
+
+                    Gizmos.DrawSphere(currentPos + meshBuilder.meshVertices[a], 0.01f);
+                    Gizmos.DrawSphere(currentPos + meshBuilder.meshVertices[b], 0.01f);
+                    Gizmos.DrawSphere(currentPos + meshBuilder.meshVertices[c], 0.01f);
+                }
+            }
         }
 
         void OnGUI()
@@ -137,99 +253,9 @@ namespace SC.Main {
                 Debug.DrawLine(currentPos + vertices[c], currentPos + vertices[a], Color.red, 1);
             }
         }
+        #endregion
 
-        public void FindIntersection(Vector2 p_point1, Vector2 p_point2)
-        {
-            intersectionPoints.Clear();
-            List<Triangle> exp_trig = new List<Triangle>(this.triangles);
-
-            Sprite sprite = sr.sprite;
-            Vector2[] vertices = sprite.vertices;
-            VerticesSegmentor verticesSegmentor = new VerticesSegmentor(p_point1, p_point2);
-
-            for (int i = 0; i < exp_trig.Count; i++)
-            {
-                if (exp_trig[i].pairs.Count == 3)
-                {
-                    HandleTrigIntersection(exp_trig[i], verticesSegmentor, p_point1, p_point2);
-                }
-            }
-
-            intersectionPoints = SortIntersectionPoint(intersectionPoints, (p_point2 - p_point1).normalized);
-
-            List<Triangle> newTrigCol = TrigBuilder.Build(exp_trig);
-
-            this.triangles = ResegmentTriangle(newTrigCol, verticesSegmentor);
-
-            meshBuilder = new MeshBuilder(this.triangles);
-
-            // DrawTriangle(segmentTrigA);
-            //DrawTriangle(segmentTrigB);
-
-            //DrawTriangle(meshBuilder.meshVertices, meshBuilder.meshTrig);
-
-            //Debug.Log("intersectionPointsLength " + intersectionPoints.Count + ", TriangleLength " + exp_trig.Count + "newTrigColLength " + newTrigCol.Count);
-            //Debug.Log("triangles " + sprite.triangles.Length + ", vertices " + sprite.vertices.Length);
-            //Debug.Log("MeshBuilder triangles " + meshBuilder.meshTrig.Length + ", MeshBuilder vertices " + meshBuilder.meshVertices.Length);
-
-            ChangeSpriteMesh(sprite, meshBuilder.meshVertices, meshBuilder.meshTrig);
-
-            ResegmentVertices(vertices, verticesSegmentor);
-
-        }
-
-        void OnDrawGizmosSelected()
-        {
-            // Draw a yellow sphere at the transform's position
-            if (intersectionPoints != null)
-            {
-                Gizmos.color = Color.yellow;
-                for (int i = 0; i < intersectionPoints.Count; i++)
-                {
-                    Gizmos.DrawSphere(intersectionPoints[i], 0.02f);
-                }
-            }
-
-            if (verticeSegmentOne != null)
-            {
-                Gizmos.color = Color.red;
-                for (int i = 0; i < verticeSegmentOne.Count; i++)
-                {
-                    Gizmos.DrawSphere(verticeSegmentOne[i], 0.03f);
-                }
-            }
-
-            if (verticeSegmentTwo != null)
-            {
-                Gizmos.color = Color.green;
-                for (int i = 0; i < verticeSegmentTwo.Count; i++)
-                {
-                    Gizmos.DrawSphere(verticeSegmentTwo[i], 0.03f);
-                }
-            }
-
-            int a, b, c;
-
-            if (meshBuilder != null)
-            {
-                Vector2 currentPos = new Vector2(transform.position.x, transform.position.y);
-                for (int i = 0; i < meshBuilder.meshTrig.Length; i = i + 3)
-                {
-                    Gizmos.color = Color.black;
-
-                    a = meshBuilder.meshTrig[i];
-                    b = meshBuilder.meshTrig[i + 1];
-                    c = meshBuilder.meshTrig[i + 2];
-
-                    Gizmos.DrawSphere(currentPos + meshBuilder.meshVertices[a], 0.01f);
-                    Gizmos.DrawSphere(currentPos + meshBuilder.meshVertices[b], 0.01f);
-                    Gizmos.DrawSphere(currentPos + meshBuilder.meshVertices[c], 0.01f);
-                }
-
-            }
-
-        }
-
+        #region Segmenting Functions
         private List<Triangle> ResegmentTriangle(List<Triangle> p_triangles, VerticesSegmentor verticesSegmentor)
         {
             List<Triangle> segmentOne = new List<Triangle>();
@@ -281,7 +307,6 @@ namespace SC.Main {
             verticeSegmentTwo = segmentTwo;
         }
 
-
         private List<Vector2> SortIntersectionPoint(List<Vector2> unsortPoints, Vector2 cut_direction)
         {
             cut_direction = cut_direction * cut_direction;
@@ -289,82 +314,7 @@ namespace SC.Main {
 
             return unsortPoints.OrderBy(x => (isSortByX) ? x.x : x.y).ToList();
         }
-
-        private void HandleTrigIntersection(Triangle triangle, VerticesSegmentor verticesSegmentor, Vector2 p_pointA, Vector2 p_pointB)
-        {
-            int pairNum = triangle.pairs.Count;
-
-            for (int i = pairNum - 1; i >= 0; i--)
-            {
-                TrigPairs pair = triangle.pairs[i];
-
-                Vector2 point = AddIntersectPoint(
-                    pair.nodeA,
-                    pair.nodeB,
-                    p_pointA, p_pointB
-                );
-
-                //Intersection has occur
-                if (!point.Equals(Vector2.positiveInfinity))
-                {
-                    Triangle.Fragment fragmentA = FindFragment(verticesSegmentor, pair.nodeA);
-                    Triangle.Fragment fragmentB = FindFragment(verticesSegmentor, pair.nodeB);
-                    Triangle.Fragment fragmentC = new Triangle.Fragment(point, "", Triangle.Fragment.Type.Cutted);
-
-                    triangle.AddFragment(new Triangle.Fragment[] { fragmentA, fragmentB, fragmentC });
-                }
-            }
-        }
-
-        private Triangle.Fragment FindFragment(VerticesSegmentor verticesSegmentor, Vector2 vertices)
-        {
-            //Triangle.Fragment fragment = new Triangle.Fragment(vertices,);
-            string segmentID = (verticesSegmentor.CompareInputWithAverageLine(vertices)) ? "A" : "B";
-            Triangle.Fragment fragment = new Triangle.Fragment(vertices, segmentID, Triangle.Fragment.Type.Original);
-
-            return fragment;
-        }
-
-        private Vector2 AddIntersectPoint(Vector2 p_line1A, Vector2 p_line1B, Vector2 p_line2A, Vector2 p_line2B)
-        {
-            bool isIntersect = Line.DoIntersect(p_line1A, p_line1B, p_line2A, p_line2B);
-
-            if (isIntersect)
-            {
-                Vector2 intersectPoint = Line.GetLineIntersection(p_line1A, p_line1B, p_line2A, p_line2B);
-                if (!intersectPoint.Equals(Vector2.positiveInfinity))
-                {
-
-                    if (!intersectionPoints.Contains(intersectPoint))
-                        intersectionPoints.Add(intersectPoint);
-
-                    return intersectPoint;
-                }
-            }
-
-            return Vector2.positiveInfinity;
-        }
-
-        // Edit the vertices obtained from the sprite.  Use OverrideGeometry to
-        // submit the changes.
-        void ChangeSprite()
-        {
-            //Fetch the Sprite and vertices from the SpriteRenderer
-            Sprite sprite = sr.sprite;
-            Vector2[] spriteVertices = sprite.vertices;
-
-            for (int i = 0; i < spriteVertices.Length; i++)
-            {
-
-                spriteVertices[i] = VerticesToWorldPos(spriteVertices[i], sprite);
-
-                spriteVertices[i].x = Mathf.Clamp(spriteVertices[i].x * 0.995f, 0.0f, sprite.rect.width);
-                spriteVertices[i].y = Mathf.Clamp(spriteVertices[i].y * 0.995f, 0.0f, sprite.rect.height);
-            }
-
-            //Override the geometry with the new vertices
-            sprite.OverrideGeometry(spriteVertices, sprite.triangles);
-        }
+        #endregion
 
         private void ChangeSpriteMesh(Sprite p_sprite, Vector2[] p_vertices, ushort[] p_triangles)
         {
@@ -399,13 +349,7 @@ namespace SC.Main {
             return worldPos;
         }
 
-        IEnumerator DoSomethingAfterDelay(float time, System.Action callback)
-        {
-            yield return new WaitForSeconds(time);
-            if (callback != null)
-                callback();
 
-        }
 
     }
 

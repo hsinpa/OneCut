@@ -8,21 +8,16 @@ public class CutterInputHandler : MonoBehaviour {
     private LineRenderer lineRenderer;
     public Camera camera;
     public LayerMask layermask;
+    public SpriteCutter spriteCutter;
 
     private Vector3 MouseDownPos, MouseUpPos;
-
-
 
     private void Start()
     {
         lineRenderer = GetComponent<LineRenderer>();
     }
 
-
     void Update () {
- //        var v3 = Input.mousePosition;
- //v3.z = 10.0;
- //v3 = Camera.main.ScreenToWorldPoint(v3);
 
         if (Input.GetMouseButtonDown(0))
         {
@@ -42,24 +37,13 @@ public class CutterInputHandler : MonoBehaviour {
         Vector3 mouseDownWorld = camera.ScreenToWorldPoint(p_mouseDown);
         Vector3 mouseUpWorld = camera.ScreenToWorldPoint(p_mouseUp);
 
-        //Debug.Log(mouseDownWorld);
-        //Debug.Log(mouseUpWorld);
-
         RaycastHit2D[] hit2d = Physics2D.LinecastAll(mouseDownWorld, mouseUpWorld, layermask);
 
         if (hit2d.Length > 0) {
-            SpriteCutter spriteCutter = hit2d[0].collider.GetComponent<SpriteCutter>();
-            spriteCutter.FindIntersection(mouseDownWorld, mouseUpWorld);
+            SpriteCutObject spriteCutObject = hit2d[0].collider.GetComponent<SpriteCutObject>();
 
-            
-            
+            spriteCutter.Cutting(spriteCutObject, mouseDownWorld, mouseUpWorld);        
         }
-
-        //for (int i = 0; i < hit2d.Length; i++)
-        //{
-        //}
-
-
     }
 
 }
