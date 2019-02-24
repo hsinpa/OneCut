@@ -47,8 +47,8 @@ namespace SC.Sample {
                 SpriteCutObject spriteCutObject = hit2d[0].collider.GetComponent<SpriteCutObject>();
 
                 SpriteCutter.Instance.Cut(spriteCutObject, mouseDownWorld, mouseUpWorld, (SpriteCutter.CutResult result, bool isSuccess) => {
-
-                    spriteCutObject.ChangeSpriteMesh(result.mainSprite.triangle, result.mainSprite.meshTrig, result.mainSprite.meshVert);
+                    if (isSuccess)
+                        spriteCutObject.ChangeSpriteMesh(result.mainSprite.triangle, result.mainSprite.meshTrig, result.mainSprite.meshVert);
 
                 });
             }

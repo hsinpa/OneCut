@@ -12,13 +12,21 @@ namespace SC.Main
     {
         #region Core Logic Flow
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="p_spriteObj"></param>
+        /// <param name="p_sprite"></param>
+        /// <param name="p_point1"></param>
+        /// <param name="p_point2"></param>
+        /// <returns></returns>
         public SpriteCutter.CutResult CutSpriteToMesh(SpriteCutObject p_spriteObj, Vector2 p_point1, Vector2 p_point2)
         {
             List<Triangle> exp_trig = new List<Triangle>(p_spriteObj.triangles);
             List<Vector2> intersectionPoints = new List<Vector2>();
 
-            Sprite sprite = p_spriteObj.sr.sprite;
-            Vector2[] vertices = sprite.vertices;
+            Sprite sprite = p_spriteObj.sprite;
+            Vector2[] vertices = p_spriteObj.meshVert;
             VerticesSegmentor verticesSegmentor = new VerticesSegmentor(p_point1, p_point2);
 
             for (int i = 0; i < exp_trig.Count; i++)
@@ -37,10 +45,12 @@ namespace SC.Main
             return new SpriteCutter.CutResult(
                 GetSprite(segmentResult[0]),
                 GetSprite(segmentResult[1]),
+                GetSprite(exp_trig),
+
                 intersectionPoints
+                
             );
                 
-            //p_spriteObj.ChangeSpriteMesh(segmentResult.mainTrig, meshBuilder.meshVertices, meshBuilder.meshTrig);
             //ResegmentVertices(vertices, verticesSegmentor);
         }
 
@@ -67,8 +77,8 @@ namespace SC.Main
                 //Intersection has occur
                 if (!point.Equals(Vector2.positiveInfinity))
                 {
-                    Triangle.Fragment fragmentA = FindFragment(verticesSegmentor, pair.nodeA);
-                    Triangle.Fragment fragmentB = FindFragment(verticesSegmentor, pair.nodeB);
+                    Triangle.Fragment fragmentA = FindVerticesSegment(verticesSegmentor, pair.nodeA);
+                    Triangle.Fragment fragmentB = FindVerticesSegment(verticesSegmentor, pair.nodeB);
                     Triangle.Fragment fragmentC = new Triangle.Fragment(point, "", Triangle.Fragment.Type.Cutted);
 
                     triangle.AddFragment(new Triangle.Fragment[] { fragmentA, fragmentB, fragmentC });
@@ -77,7 +87,7 @@ namespace SC.Main
             }
         }
 
-        private Triangle.Fragment FindFragment(VerticesSegmentor verticesSegmentor, Vector2 vertices)
+        private Triangle.Fragment FindVerticesSegment(VerticesSegmentor verticesSegmentor, Vector2 vertices)
         {
             //Triangle.Fragment fragment = new Triangle.Fragment(vertices,);
             string segmentID = (verticesSegmentor.CompareInputWithAverageLine(vertices)) ? "A" : "B";
@@ -104,6 +114,12 @@ namespace SC.Main
         #endregion
 
         #region Segmenting Functions
+        /// <summary>
+        /// Segment raw triangles into two according to cutting line
+        /// </summary>
+        /// <param name="p_triangles"></param>
+        /// <param name="verticesSegmentor"></param>
+        /// <returns></returns>
         private List<Triangle>[] ResegmentTriangle(List<Triangle> p_triangles, VerticesSegmentor verticesSegmentor)
         {
             List<Triangle> segmentOne = new List<Triangle>();

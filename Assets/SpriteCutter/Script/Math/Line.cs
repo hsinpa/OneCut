@@ -92,6 +92,12 @@ namespace SC.Math
             }
         }
 
+        /// <summary>
+        /// Get X on regression line
+        /// </summary>
+        /// <param name="p_point1"></param>
+        /// <param name="p_point2"></param>
+        /// <returns></returns>
         public static System.Func<float, float> CalculateLinearRegressionX(Vector2 p_point1, Vector2 p_point2)
         {
             float m = CalculateSlopeM(p_point1, p_point2);
@@ -100,6 +106,12 @@ namespace SC.Math
             return (y) => (y - b) / m;
         }
 
+        /// <summary>
+        /// Get Y on regular regression line
+        /// </summary>
+        /// <param name="p_point1"></param>
+        /// <param name="p_point2"></param>
+        /// <returns></returns>
         public static System.Func<float, float> CalculateLinearRegressionY(Vector2 p_point1, Vector2 p_point2) {
             float m = CalculateSlopeM(p_point1, p_point2);
             float b = CalculateSlopeB(p_point1, m);
@@ -116,7 +128,10 @@ namespace SC.Math
             return -(point.x * m) + point.y;
         }
 
-
+        public static float CalculateLossPercent(float targetSize, float selfSize)
+        {
+            return Mathf.Clamp( (selfSize / targetSize),0, 1);
+        }
 
     }
 }

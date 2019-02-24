@@ -8,7 +8,6 @@ namespace SC.Main
     [RequireComponent(typeof(SpriteRenderer))]
     public class SpriteCutObject : MonoBehaviour
     {
-
         #region Parameter
         public SpriteRenderer sr {
             get {
@@ -16,6 +15,8 @@ namespace SC.Main
             }
         }
         private SpriteRenderer _sr;
+
+        public Sprite sprite;
 
         public List<Triangle> triangles
         {
@@ -26,8 +27,29 @@ namespace SC.Main
         }
         private List<Triangle> _triangles;
 
+
+        public ushort[] meshTrig
+        {
+            get
+            {
+                return _meshTrig;
+            }
+        }
+        private ushort[] _meshTrig;
+
+
+        public Vector2[] meshVert
+        {
+            get
+            {
+                return _meshVert;
+            }
+        }
+        private Vector2[] _meshVert;
+
         private Sprite backupSprite;
-        #endregion
+               
+                #endregion
 
         void Start()
         {
@@ -36,7 +58,7 @@ namespace SC.Main
             AssignSprite(_sr.sprite);
         }
 
-        public Sprite CopySprite(Sprite p_sprite) {
+        private Sprite CopySprite(Sprite p_sprite) {
             var pix = p_sprite.texture.GetPixels32();
 
             // Copy the reversed image data to a new texture.
@@ -50,12 +72,19 @@ namespace SC.Main
         public void AssignSprite(Sprite p_sprite) {
             backupSprite = CopySprite(p_sprite);
             _sr.sprite = CopySprite(p_sprite);
+            sprite = _sr.sprite;
 
             _triangles = GenerateTriangle(_sr.sprite);
+
+            AssignMesh(p_sprite.vertices, p_sprite.triangles, false);
         }
 
-        public void AssignMesh(Vector2[] p_vertices, ushort[] p_triangles) {
-            _sr.sprite.OverrideGeometry(p_vertices, p_triangles);
+        public void AssignMesh(Vector2[] p_vertices, ushort[] p_triangles, bool overrideGeometry = true) {
+            _meshVert = p_vertices;
+            _meshTrig = p_triangles;
+
+            if (overrideGeometry)
+                _sr.sprite.OverrideGeometry(p_vertices, p_triangles);
         }
 
         /// <summary>
@@ -95,32 +124,35 @@ namespace SC.Main
 
             for (int i = 0; i < p_meshVert.Length; i++)
             {
-                spriteVertices[i] = VerticesToWorldPos(p_meshVert[i], _sr.sprite);
+                spriteVertices[i] = VerticesToGeometryPos(p_meshVert[i], _sr.sprite);
             }
 
             //Override the geometry with the new vertices
             AssignMesh(spriteVertices, p_meshTrig);
         }
 
-        private Vector2 VerticesToWorldPos(Vector2 vertices, Sprite sprite)
+        private Vector2 VerticesToGeometryPos(Vector2 vertices, Sprite sprite)
         {
-            Vector2 worldPos = Vector2.zero;
+            Vector2 geometryPos = Vector2.zero;
 
-            worldPos.x = Mathf.Clamp(
+            geometryPos.x = Mathf.Clamp(
                         (vertices.x - sprite.bounds.center.x -
                             (sprite.textureRectOffset.x / sprite.texture.width) + sprite.bounds.extents.x) /
                         (2.0f * sprite.bounds.extents.x) * sprite.rect.width,
                         0.0f, sprite.rect.width);
 
-            worldPos.y = Mathf.Clamp(
+            geometryPos.y = Mathf.Clamp(
                     (vertices.y - sprite.bounds.center.y -
                         (sprite.textureRectOffset.y / sprite.texture.height) + sprite.bounds.extents.y) /
                     (2.0f * sprite.bounds.extents.y) * sprite.rect.height,
                     0.0f, sprite.rect.height);
 
-            return worldPos;
+            return geometryPos;
         }
 
+        /// <summary>
+        /// Re-apply the original sprite
+        /// </summary>
         public void Restore()
         {
             if (backupSprite != null) {
@@ -129,7 +161,7 @@ namespace SC.Main
             }
         }
 
-        #region Debug
+        #region Debug Tool
         void DrawTriangle(Vector2[] p_vertices, ushort[] p_triangles)
         {
             Vector2 currentPos = new Vector2(transform.position.x, transform.position.y);

@@ -33,6 +33,12 @@ public class MeshBuilder {
         _meshVertices = verticesIndex.vertices;
     }
 
+    /// <summary>
+    /// Build up ushort[] for mesh trig
+    /// </summary>
+    /// <param name="p_triangles"></param>
+    /// <param name="p_verticeIndex"></param>
+    /// <returns></returns>
     private ushort[] GetTrigStructure(List<Triangle> p_triangles, VerticesIndex p_verticeIndex) {
         ushort[] newMeshTrig = new ushort[p_triangles.Count * 3];
 
@@ -49,14 +55,6 @@ public class MeshBuilder {
                 newMeshTrig[trigIndex] = a;
                 newMeshTrig[trigIndex + 1] = b;
                 newMeshTrig[trigIndex + 2] = c;
-
-                //Debug.Log("RE_Trig " + a + " Vertices " + p_verticeIndex.vertices[a] + ", Trig " + b + " Vertices " + p_verticeIndex.vertices[b] + ", Trig " + c + " Vertices " + p_verticeIndex.vertices[c]);
-
-                //int _short = p_verticeIndex.GetIndex(p_triangles[i].nodes[n]);
-                //Debug.Log("Int " + _short + ", Short " + (ushort)_short);
-                //Debug.Log("Index " + _short + ", Nodes (" + p_triangles[i].nodes[n].x + "," + p_triangles[i].nodes[n].y + ")");
-
-                //newMeshTrig[i + n] = (ushort)_short;
             }
             catch {
                 Debug.LogError("p_verticeIndex.VectorToIndex Eror");
@@ -66,6 +64,11 @@ public class MeshBuilder {
         return newMeshTrig;
     }
 
+    /// <summary>
+    /// Build up vertices index table
+    /// </summary>
+    /// <param name="p_triangles"></param>
+    /// <returns></returns>
     private VerticesIndex BuildVerticesIndex(List<Triangle> p_triangles)
     {
         VerticesIndex verticesIndex = new VerticesIndex();
