@@ -49,7 +49,6 @@ namespace SC.Trig {
         {
             this._nodes = nodes;
             this.pairs = pairs;
-
             this.segmentID = "trig";
 
             this._fragments = new List<Fragment>();

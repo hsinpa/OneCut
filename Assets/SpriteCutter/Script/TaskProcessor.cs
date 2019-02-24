@@ -7,10 +7,15 @@ using SC.Trig;
 namespace SC.Main {
     public class TaskProcessor
     {
-        Queue<CutResult> results = new Queue<CutResult>();
+        Queue<TaskResult> results = new Queue<TaskResult>();
 
-        public void AssignTask() {
+        public void AssignTask(TaskRequest p_request) {
+            Thread t = new Thread(new ThreadStart(delegate {
 
+
+            }));
+
+            t.Start();
         }
 
         public void OnUpdate() {
@@ -21,35 +26,37 @@ namespace SC.Main {
                 {
                     for (int i = 0; i < itemsInQueue; i++)
                     {
-                        CutResult result = results.Dequeue();
+                        TaskResult result = results.Dequeue();
                         //result.callback(result.path, result.success);
                     }
                 }
             }
         }
 
-        public struct CutRequest
+        public struct TaskRequest
         {
+            public SpriteCutObject target_sprite;
             public Vector2 pathStart;
             public Vector2 pathEnd;
             public System.Action<Vector3[], bool> callback;
 
-            public CutRequest(Vector2 _start, Vector2 _end, System.Action<Vector3[], bool> _callback)
+            public TaskRequest(SpriteCutObject p_targetSprite, Vector2 _start, Vector2 _end, System.Action<Vector3[], bool> _callback)
             {
+                target_sprite = p_targetSprite;
                 pathStart = _start;
                 pathEnd = _end;
                 callback = _callback;
             }
         }
 
-        public struct CutResult
+        public struct TaskResult
         {
             public List<Triangle> mainTrig;
             public List<Triangle> subTrig;
             public bool isSuccess;
             public System.Action<List<Triangle>, List<Triangle>, bool> callback;
 
-            public CutResult(List<Triangle> _mainTrig, List<Triangle> _subTrig, System.Action<List<Triangle>, List<Triangle>, bool> _callback)
+            public TaskResult(List<Triangle> _mainTrig, List<Triangle> _subTrig, System.Action<List<Triangle>, List<Triangle>, bool> _callback)
             {
                 mainTrig = _mainTrig;
                 subTrig = _subTrig;

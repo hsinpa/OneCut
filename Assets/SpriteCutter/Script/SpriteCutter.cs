@@ -4,11 +4,13 @@ using UnityEngine;
 using System.Linq;
 using SC.Math;
 using SC.Trig;
+using System.Threading;
 
 namespace SC.Main {
 
     public class SpriteCutter : MonoBehaviour
     {
+        //Singleton
         private static SpriteCutter s_Instance;
         public static SpriteCutter Instance
         {
@@ -29,115 +31,91 @@ namespace SC.Main {
             }
         }
 
-
-        private Texture2D tex;
-        private Sprite generateSprite;
-        private Sprite backupSprite;
-
-        private SpriteRenderer sr;
+        //For debug purpose
         private List<Vector2> intersectionPoints = new List<Vector2>();
         private List<Vector2> verticeSegmentOne;
         private List<Vector2> verticeSegmentTwo;
-
-        private List<Triangle> triangles = new List<Triangle>();
-        private List<Triangle> segmentTrigA = new List<Triangle>();
-        private List<Triangle> segmentTrigB = new List<Triangle>();
         private MeshBuilder meshBuilder;
+
+        private SpriteCutAlgorithm mainAlgorithm;
+        private Queue<TaskResult> results = new Queue<TaskResult>();
+
+        public delegate void MathAction(CutResult cutResult);
 
         void Start()
         {
             s_Instance = this;
+            mainAlgorithm = new SpriteCutAlgorithm();
         }
 
-        #region Core Logic Flow
 
-        public void Cutting(SpriteCutObject p_spriteObj, Vector2 p_point1, Vector2 p_point2)
+        public void Cut(SpriteCutObject p_spriteObj, Vector2 p_point1, Vector2 p_point2, System.Action<CutResult, bool> p_callback)
         {
-            intersectionPoints.Clear();
-            List<Triangle> exp_trig = new List<Triangle>(this.triangles);
+            //Debug.Log("Call Cut");
 
-            Sprite sprite = sr.sprite;
-            Vector2[] vertices = sprite.vertices;
-            VerticesSegmentor verticesSegmentor = new VerticesSegmentor(p_point1, p_point2);
-
-            for (int i = 0; i < exp_trig.Count; i++)
+            Thread t = new Thread(new ThreadStart(delegate
             {
-                if (exp_trig[i].pairs.Count == 3)
+
+                CutResult cutResult = mainAlgorithm.CutSpriteToMesh(p_spriteObj, p_point1, p_point2);
+                bool isSuccess = (cutResult.intersectionPoints.Count > 0);
+                Debug.Log("Success " + isSuccess);
+
+
+                lock (results)
                 {
-                    HandleTrigIntersection(exp_trig[i], verticesSegmentor, p_point1, p_point2);
+                    results.Enqueue(new TaskResult(cutResult, isSuccess, p_callback));
                 }
-            }
 
-            intersectionPoints = SortIntersectionPoint(intersectionPoints, (p_point2 - p_point1).normalized);
+            }));
 
-            List<Triangle> newTrigCol = TrigBuilder.Build(exp_trig);
-
-            this.triangles = ResegmentTriangle(newTrigCol, verticesSegmentor);
-
-            meshBuilder = new MeshBuilder(this.triangles);
-
-            ChangeSpriteMesh(sprite, meshBuilder.meshVertices, meshBuilder.meshTrig);
-
-            ResegmentVertices(vertices, verticesSegmentor);
+            t.Start();
         }
 
-        private void HandleTrigIntersection(Triangle triangle, VerticesSegmentor verticesSegmentor, Vector2 p_pointA, Vector2 p_pointB)
+        public void Update()
         {
-            int pairNum = triangle.pairs.Count;
-
-            for (int i = pairNum - 1; i >= 0; i--)
+            if (results.Count > 0)
             {
-                TrigPairs pair = triangle.pairs[i];
-
-                Vector2 point = AddIntersectPoint(
-                    pair.nodeA,
-                    pair.nodeB,
-                    p_pointA, p_pointB
-                );
-
-                //Intersection has occur
-                if (!point.Equals(Vector2.positiveInfinity))
+                int itemsInQueue = results.Count;
+                lock (results)
                 {
-                    Triangle.Fragment fragmentA = FindFragment(verticesSegmentor, pair.nodeA);
-                    Triangle.Fragment fragmentB = FindFragment(verticesSegmentor, pair.nodeB);
-                    Triangle.Fragment fragmentC = new Triangle.Fragment(point, "", Triangle.Fragment.Type.Cutted);
-
-                    triangle.AddFragment(new Triangle.Fragment[] { fragmentA, fragmentB, fragmentC });
+                    for (int i = 0; i < itemsInQueue; i++)
+                    {
+                        TaskResult result = results.Dequeue();
+                        //result.callback(result.path, result.success);
+                    }
                 }
             }
         }
 
-        private Triangle.Fragment FindFragment(VerticesSegmentor verticesSegmentor, Vector2 vertices)
+        public struct TaskRequest
         {
-            //Triangle.Fragment fragment = new Triangle.Fragment(vertices,);
-            string segmentID = (verticesSegmentor.CompareInputWithAverageLine(vertices)) ? "A" : "B";
-            Triangle.Fragment fragment = new Triangle.Fragment(vertices, segmentID, Triangle.Fragment.Type.Original);
+            public SpriteCutObject target_sprite;
+            public Vector2 pathStart;
+            public Vector2 pathEnd;
+            public System.Action<Vector3[], bool> callback;
 
-            return fragment;
-        }
-
-        private Vector2 AddIntersectPoint(Vector2 p_line1A, Vector2 p_line1B, Vector2 p_line2A, Vector2 p_line2B)
-        {
-            bool isIntersect = Line.DoIntersect(p_line1A, p_line1B, p_line2A, p_line2B);
-
-            if (isIntersect)
+            public TaskRequest(SpriteCutObject p_targetSprite, Vector2 _start, Vector2 _end, System.Action<Vector3[], bool> _callback)
             {
-                Vector2 intersectPoint = Line.GetLineIntersection(p_line1A, p_line1B, p_line2A, p_line2B);
-                if (!intersectPoint.Equals(Vector2.positiveInfinity))
-                {
-
-                    if (!intersectionPoints.Contains(intersectPoint))
-                        intersectionPoints.Add(intersectPoint);
-
-                    return intersectPoint;
-                }
+                target_sprite = p_targetSprite;
+                pathStart = _start;
+                pathEnd = _end;
+                callback = _callback;
             }
-
-            return Vector2.positiveInfinity;
         }
-        #endregion
 
+        public struct TaskResult
+        {
+            public CutResult cutResult;
+            public bool isSuccess;
+            public System.Action<CutResult, bool> callback;
 
+            public TaskResult(CutResult p_cutResult, bool p_isSuccess, System.Action<CutResult, bool> p_callback)
+            {
+                cutResult = p_cutResult;
+                isSuccess = p_isSuccess;
+                callback = p_callback;
+            }
+        }
 
         #region Debug Functions
         void OnDrawGizmosSelected()
@@ -189,167 +167,34 @@ namespace SC.Main {
                 }
             }
         }
-
-        void OnGUI()
-        {
-            if (GUI.Button(new Rect(10, 10, 100, 30), "Rebuild"))
-            {
-                //ChangeSprite();
-                //DrawDebug(meshBuilder);
-                //DrawTriangle(this.triangles);
-
-                ChangeSpriteMesh(sr.sprite, backupSprite.vertices, backupSprite.triangles);
-            }
-        }
-
-        void DrawTriangle(List<Triangle> p_triangle)
-        {
-            Vector2 currentPos = new Vector2(transform.position.x, transform.position.y);
-            //Debug.Log(triangles.Count);
-            for (int i = 0; i < p_triangle.Count; i++)
-            {
-                //To see these you must view the game in the Scene tab while in Play mode
-                Debug.DrawLine(currentPos + p_triangle[i].nodes[0], currentPos + p_triangle[i].nodes[1], Color.red, 1);
-                Debug.DrawLine(currentPos + p_triangle[i].nodes[1], currentPos + p_triangle[i].nodes[2], Color.red, 1);
-                Debug.DrawLine(currentPos + p_triangle[i].nodes[2], currentPos + p_triangle[i].nodes[0], Color.red, 1);
-            }
-        }
-
-        void DrawTriangle(Vector2[] p_vertices, ushort[] p_triangles)
-        {
-            Vector2 currentPos = new Vector2(transform.position.x, transform.position.y);
-            int a, b, c;
-            for (int i = 0; i < p_triangles.Length; i = i + 3)
-            {
-                a = p_triangles[i];
-                b = p_triangles[i + 1];
-                c = p_triangles[i + 2];
-
-                //To see these you must view the game in the Scene tab while in Play mode
-                Debug.DrawLine(currentPos + p_vertices[a], currentPos + p_vertices[b], Color.red, 1);
-                Debug.DrawLine(currentPos + p_vertices[b], currentPos + p_vertices[c], Color.red, 1);
-                Debug.DrawLine(currentPos + p_vertices[c], currentPos + p_vertices[a], Color.red, 1);
-            }
-        }
-
-        void DrawDebug(MeshBuilder p_meshBuilder)
-        {
-            Sprite sprite = sr.sprite;
-
-            ushort[] triangles = sprite.triangles;
-            Vector2[] vertices = sprite.vertices;
-            int a, b, c;
-            Vector2 currentPos = new Vector2(transform.position.x, transform.position.y);
-            // draw the triangles using grabbed vertices
-            for (int i = 0; i < triangles.Length; i = i + 3)
-            {
-                a = triangles[i];
-                b = triangles[i + 1];
-                c = triangles[i + 2];
-
-                //To see these you must view the game in the Scene tab while in Play mode
-                Debug.DrawLine(currentPos + vertices[a], currentPos + vertices[b], Color.red, 1);
-                Debug.DrawLine(currentPos + vertices[b], currentPos + vertices[c], Color.red, 1);
-                Debug.DrawLine(currentPos + vertices[c], currentPos + vertices[a], Color.red, 1);
-            }
-        }
         #endregion
 
-        #region Segmenting Functions
-        private List<Triangle> ResegmentTriangle(List<Triangle> p_triangles, VerticesSegmentor verticesSegmentor)
-        {
-            List<Triangle> segmentOne = new List<Triangle>();
-            List<Triangle> segmentTwo = new List<Triangle>();
 
-            float segmentA_area = 0, segmentB_area = 0;
+        public struct CutResult {
+            public Sprite mainSprite;
+            public Sprite subSprite;
+            public List<Vector2> intersectionPoints;
 
-
-            for (int i = 0; i < p_triangles.Count; i++)
+            public CutResult(Sprite mainSprite, Sprite subSprite, List<Vector2> intersectionPoints)
             {
-                if (verticesSegmentor.CompareInputWithAverageLine(p_triangles[i].center))
-                {
-                    p_triangles[i].segmentID = "A";
-                    segmentA_area += p_triangles[i].area;
-                    segmentOne.Add(p_triangles[i]);
-                }
-                else
-                {
-                    p_triangles[i].segmentID = "B";
-                    segmentB_area += p_triangles[i].area;
-                    segmentTwo.Add(p_triangles[i]);
-                }
+                this.mainSprite = mainSprite;
+                this.subSprite = subSprite;
+                this.intersectionPoints = intersectionPoints;
             }
-
-            segmentTrigA = segmentOne;
-            segmentTrigB = segmentTwo;
-
-            return (segmentA_area > segmentB_area) ? segmentOne : segmentTwo;
         }
 
-        private void ResegmentVertices(Vector2[] p_vertices, VerticesSegmentor verticesSegmentor)
-        {
-            List<Vector2> segmentOne = new List<Vector2>();
-            List<Vector2> segmentTwo = new List<Vector2>();
+        public struct Sprite {
+            public List<Triangle> triangle;
+            public ushort[] meshTrig;
+            public Vector2[] meshVert;
 
-            for (int i = 0; i < p_vertices.Length; i++)
+            public Sprite(List<Triangle> triangle, ushort[] meshTrig, Vector2[] meshVert)
             {
-                if (verticesSegmentor.CompareInputWithAverageLine(p_vertices[i]))
-                {
-                    segmentOne.Add(p_vertices[i]);
-                }
-                else
-                {
-                    segmentTwo.Add(p_vertices[i]);
-                }
+                this.triangle = triangle;
+                this.meshTrig = meshTrig;
+                this.meshVert = meshVert;
             }
-
-            verticeSegmentOne = segmentOne;
-            verticeSegmentTwo = segmentTwo;
         }
-
-        private List<Vector2> SortIntersectionPoint(List<Vector2> unsortPoints, Vector2 cut_direction)
-        {
-            cut_direction = cut_direction * cut_direction;
-            bool isSortByX = (cut_direction.x > cut_direction.y);
-
-            return unsortPoints.OrderBy(x => (isSortByX) ? x.x : x.y).ToList();
-        }
-        #endregion
-
-        private void ChangeSpriteMesh(Sprite p_sprite, Vector2[] p_vertices, ushort[] p_triangles)
-        {
-            Sprite sprite = p_sprite;
-            Vector2[] spriteVertices = new Vector2[p_vertices.Length];
-
-            for (int i = 0; i < p_vertices.Length; i++)
-            {
-                spriteVertices[i] = VerticesToWorldPos(p_vertices[i], sprite);
-            }
-
-            //Override the geometry with the new vertices
-            sprite.OverrideGeometry(spriteVertices, p_triangles);
-        }
-
-        private Vector2 VerticesToWorldPos(Vector2 vertices, Sprite sprite)
-        {
-            Vector2 worldPos = Vector2.zero;
-
-            worldPos.x = Mathf.Clamp(
-                        (vertices.x - sprite.bounds.center.x -
-                            (sprite.textureRectOffset.x / sprite.texture.width) + sprite.bounds.extents.x) /
-                        (2.0f * sprite.bounds.extents.x) * sprite.rect.width,
-                        0.0f, sprite.rect.width);
-
-            worldPos.y = Mathf.Clamp(
-                    (vertices.y - sprite.bounds.center.y -
-                        (sprite.textureRectOffset.y / sprite.texture.height) + sprite.bounds.extents.y) /
-                    (2.0f * sprite.bounds.extents.y) * sprite.rect.height,
-                    0.0f, sprite.rect.height);
-
-            return worldPos;
-        }
-
-
 
     }
 
