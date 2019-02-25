@@ -20,7 +20,7 @@ namespace SC.Main
         /// <param name="p_point1"></param>
         /// <param name="p_point2"></param>
         /// <returns></returns>
-        public SpriteCutter.CutResult CutSpriteToMesh(SpriteCutObject p_spriteObj, Vector2 p_point1, Vector2 p_point2)
+        public SpriteCutter.CutResult CutSpriteToMesh(SpriteCutObject p_spriteObj, Vector2 selfPos, Vector2 p_point1, Vector2 p_point2)
         {
             List<Triangle> exp_trig = new List<Triangle>(p_spriteObj.triangles);
             List<Vector2> intersectionPoints = new List<Vector2>();
@@ -33,14 +33,14 @@ namespace SC.Main
             {
                 if (exp_trig[i].pairs.Count == 3)
                 {
-                    HandleTrigIntersection(intersectionPoints, exp_trig[i], verticesSegmentor, p_point1, p_point2);
+                    HandleTrigIntersection(intersectionPoints, exp_trig[i], verticesSegmentor, selfPos, p_point1, p_point2);
                 }
             }
 
             List<Triangle> newTrigCol = TrigBuilder.Build(exp_trig);
 
             //always contain 2 trig result
-            var segmentResult = ResegmentTriangle(newTrigCol, verticesSegmentor);
+            var segmentResult = ResegmentTriangle(newTrigCol, verticesSegmentor, selfPos);
 
             return new SpriteCutter.CutResult(
                 GetSprite(segmentResult[0]),
@@ -60,7 +60,7 @@ namespace SC.Main
             return new SpriteCutter.Sprite(p_triangles, meshBuilder.meshTrig, meshBuilder.meshVertices);
         }
 
-        private void HandleTrigIntersection(List<Vector2> intersectList, Triangle triangle, VerticesSegmentor verticesSegmentor, Vector2 p_pointA, Vector2 p_pointB)
+        private void HandleTrigIntersection(List<Vector2> intersectList, Triangle triangle, VerticesSegmentor verticesSegmentor, Vector2 selfPos, Vector2 p_pointA, Vector2 p_pointB)
         {
             int pairNum = triangle.pairs.Count;
 
@@ -69,17 +69,17 @@ namespace SC.Main
                 TrigPairs pair = triangle.pairs[i];
 
                 Vector2 point = AddIntersectPoint(
-                    pair.nodeA,
-                    pair.nodeB,
+                    pair.nodeA + selfPos,
+                    pair.nodeB + selfPos,
                     p_pointA, p_pointB
                 );
 
                 //Intersection has occur
                 if (!point.Equals(Vector2.positiveInfinity))
                 {
-                    Triangle.Fragment fragmentA = FindVerticesSegment(verticesSegmentor, pair.nodeA);
-                    Triangle.Fragment fragmentB = FindVerticesSegment(verticesSegmentor, pair.nodeB);
-                    Triangle.Fragment fragmentC = new Triangle.Fragment(point, "", Triangle.Fragment.Type.Cutted);
+                    Triangle.Fragment fragmentA = FindVerticesSegment(verticesSegmentor, pair.nodeA, pair.nodeA + selfPos);
+                    Triangle.Fragment fragmentB = FindVerticesSegment(verticesSegmentor, pair.nodeB, pair.nodeB + selfPos);
+                    Triangle.Fragment fragmentC = new Triangle.Fragment(point - selfPos, "", Triangle.Fragment.Type.Cutted);
 
                     triangle.AddFragment(new Triangle.Fragment[] { fragmentA, fragmentB, fragmentC });
                     intersectList.Add(point);
@@ -87,10 +87,10 @@ namespace SC.Main
             }
         }
 
-        private Triangle.Fragment FindVerticesSegment(VerticesSegmentor verticesSegmentor, Vector2 vertices)
+        private Triangle.Fragment FindVerticesSegment(VerticesSegmentor verticesSegmentor, Vector2 vertices, Vector2 worldVert)
         {
             //Triangle.Fragment fragment = new Triangle.Fragment(vertices,);
-            string segmentID = (verticesSegmentor.CompareInputWithAverageLine(vertices)) ? "A" : "B";
+            string segmentID = (verticesSegmentor.CompareInputWithAverageLine(worldVert)) ? "A" : "B";
             Triangle.Fragment fragment = new Triangle.Fragment(vertices, segmentID, Triangle.Fragment.Type.Original);
 
             return fragment;
@@ -120,7 +120,7 @@ namespace SC.Main
         /// <param name="p_triangles"></param>
         /// <param name="verticesSegmentor"></param>
         /// <returns></returns>
-        private List<Triangle>[] ResegmentTriangle(List<Triangle> p_triangles, VerticesSegmentor verticesSegmentor)
+        private List<Triangle>[] ResegmentTriangle(List<Triangle> p_triangles, VerticesSegmentor verticesSegmentor, Vector2 selfPos)
         {
             List<Triangle> segmentOne = new List<Triangle>();
             List<Triangle> segmentTwo = new List<Triangle>();
@@ -130,7 +130,7 @@ namespace SC.Main
 
             for (int i = 0; i < p_triangles.Count; i++)
             {
-                if (verticesSegmentor.CompareInputWithAverageLine(p_triangles[i].center))
+                if (verticesSegmentor.CompareInputWithAverageLine(p_triangles[i].center + selfPos))
                 {
                     p_triangles[i].segmentID = "A";
                     segmentA_area += p_triangles[i].area;

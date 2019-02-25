@@ -40,18 +40,23 @@ namespace SC.Sample {
             Vector3 mouseDownWorld = camera.ScreenToWorldPoint(p_mouseDown);
             Vector3 mouseUpWorld = camera.ScreenToWorldPoint(p_mouseUp);
 
-            RaycastHit2D[] hit2d = Physics2D.LinecastAll(mouseDownWorld, mouseUpWorld, layermask);
+            RaycastHit2D[] hit2ds = Physics2D.LinecastAll(mouseDownWorld, mouseUpWorld, layermask);
 
-            if (hit2d.Length > 0)
-            {
-                SpriteCutObject spriteCutObject = hit2d[0].collider.GetComponent<SpriteCutObject>();
+            foreach (var hit in hit2ds) {
+                if (hit.transform != null) {
 
-                SpriteCutter.Instance.Cut(spriteCutObject, mouseDownWorld, mouseUpWorld, (SpriteCutter.CutResult result, bool isSuccess) => {
-                    if (isSuccess)
-                        spriteCutObject.ChangeSpriteMesh(result.mainSprite.triangle, result.mainSprite.meshTrig, result.mainSprite.meshVert);
+                    SpriteCutObject spriteCutObject = hit.collider.GetComponent<SpriteCutObject>();
+                    SpriteCutter.Instance.Cut(spriteCutObject, mouseDownWorld, mouseUpWorld, (SpriteCutter.CutResult result, bool isSuccess) => {
 
-                });
+                        Debug.Log(spriteCutObject.name + ", " + isSuccess);
+
+                        if (isSuccess)
+                            spriteCutObject.ChangeSpriteMesh(result.mainSprite.triangle, result.mainSprite.meshTrig, result.mainSprite.meshVert);
+
+                    });
+                }
             }
+
         }
     }
 }

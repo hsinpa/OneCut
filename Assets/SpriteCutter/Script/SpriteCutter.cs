@@ -65,53 +65,35 @@ namespace SC.Main {
 
         public void Cut(SpriteCutObject p_spriteObj, Vector2 p_point1, Vector2 p_point2, System.Action<CutResult, bool> p_callback)
         {
-            //Debug.Log("Call Cut");
-            var sprite = p_spriteObj.sr.sprite;
-
-            Vector2 direction = (p_point2 - p_point1).normalized;
-            //var lossPercent = Line.CalculateLossPercent(p_spriteObj.sr.bounds.size.magnitude, (p_point2 - p_point1).magnitude);
-
-            //if (autoCompensation && (acceptedRatio <= lossPercent))
-            //{
-            //    //Debug.Log("Loss Percent " + lossPercent + ", Direciton " + direction);
-            //    //Debug.Log("Point1 " + p_point1 + ", Point2 " + p_point2);
-            //    var slopeFormula = Line.CalculateLinearRegressionY(p_point1, p_point2);
-
-            //    var positionOneX = p_spriteObj.transform.position.x - p_spriteObj.sr.bounds.size.x;
-            //    var positionTwoX = p_spriteObj.transform.position.x + p_spriteObj.sr.bounds.size.x;
-
-            //    p_point1 = new Vector2(positionOneX, slopeFormula(positionOneX));
-            //    p_point2 = new Vector2(positionTwoX, slopeFormula(positionTwoX));
-            //}
-            //else {
-            //    p_callback(default(CutResult), false);
-            //    return;
-            //}
-
-
-#if !UNITY_WEBGL	
-            Thread t = new Thread(new ThreadStart(delegate
-            {
+            Vector2 objectPos = p_spriteObj.transform.position;
+#if !UNITY_WEBGL
+            RunCutAyns(delegate { RunCut(p_spriteObj, objectPos, p_point1, p_point2, p_callback); });
+#else
+            RunCut(p_spriteObj, p_point1, p_point2, p_callback);
 #endif
-                List<Triangle> originalTrig = p_spriteObj.triangles;
-                CutResult cutResult = mainAlgorithm.CutSpriteToMesh(p_spriteObj, p_point1, p_point2);
 
-                var newArea = System.Math.Round(cutResult.mainSprite.area + cutResult.subSprite.area, 2);
-                var oriArea = System.Math.Round(cutResult.originSprite.area, 2);
-                bool isSuccess = (newArea >= oriArea);
+        }
 
-                lock (results)
-                {
-                    results.Enqueue(new TaskResult(cutResult, isSuccess, p_callback));
-                }
+        private void RunCut(SpriteCutObject p_spriteObj, Vector2 objectPos, Vector2 p_point1, Vector2 p_point2, System.Action<CutResult, bool> p_callback) {
+            List<Triangle> originalTrig = p_spriteObj.triangles;
+            CutResult cutResult = mainAlgorithm.CutSpriteToMesh(p_spriteObj, objectPos, p_point1, p_point2);
+
+            var newArea = System.Math.Round(cutResult.mainSprite.area + cutResult.subSprite.area, 2);
+            var oriArea = System.Math.Round(cutResult.originSprite.area, 2);
+            bool isSuccess = (newArea >= oriArea);
+
+            lock (results)
+            {
+                results.Enqueue(new TaskResult(cutResult, isSuccess, p_callback));
+            }
+        }
 
 #if !UNITY_WEBGL
-
-            }));
-
+        private void RunCutAyns(System.Action p_task) {
+            Thread t = new Thread(new ThreadStart(p_task));
             t.Start();
-#endif
         }
+#endif
 
         public void Update()
         {
