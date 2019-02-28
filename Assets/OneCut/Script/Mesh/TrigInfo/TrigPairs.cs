@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace SC.Trig
+namespace OC.Trig
 {
     public struct TrigPairs
     {

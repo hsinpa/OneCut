@@ -1,12 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using SC.Trig;
+using OC.Trig;
 
-namespace SC.Main
+namespace OC.Main
 {
     [RequireComponent(typeof(SpriteRenderer))]
-    public class SpriteCutObject : MonoBehaviour
+    public class OneCutObject : MonoBehaviour
     {
         #region Parameter
         public SpriteRenderer sr {

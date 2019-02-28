@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
-namespace SC.Trig {
+namespace OC.Trig {
     public class Triangle
     {
         public string segmentID;

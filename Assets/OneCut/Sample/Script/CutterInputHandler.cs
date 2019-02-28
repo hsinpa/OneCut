@@ -1,9 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using SC.Main;
+using OC.Main;
 
-namespace SC.Sample {
+namespace OC.Sample {
     public class CutterInputHandler : MonoBehaviour
     {
 
@@ -45,12 +45,14 @@ namespace SC.Sample {
             foreach (var hit in hit2ds) {
                 if (hit.transform != null) {
 
-                    SpriteCutObject spriteCutObject = hit.collider.GetComponent<SpriteCutObject>();
-                    SpriteCutter.Instance.Cut(spriteCutObject, mouseDownWorld, mouseUpWorld, (SpriteCutter.CutResult result, bool isSuccess) => {
+                    OneCutObject spriteCutObject = hit.collider.GetComponent<OneCutObject>();
+                    OneCut.Instance.Cut(spriteCutObject, mouseDownWorld, mouseUpWorld, (OneCut.CutResult result, bool isSuccess) => {
 
 
-                        if (isSuccess)
+                        if (isSuccess) {
+                            //Call SpriteCutObject.ChangeSpriteMesh to apply new generated mesh
                             spriteCutObject.ChangeSpriteMesh(result.mainSprite.triangle, result.mainSprite.meshTrig, result.mainSprite.meshVert);
+                        }
                     });
                 }
             }

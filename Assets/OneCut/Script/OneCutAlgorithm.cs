@@ -1,14 +1,14 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using SC.Trig;
+using OC.Trig;
 using System.Linq;
-using SC.Math;
+using OC.Math;
 
-namespace SC.Main
+namespace OC.Main
 {
 
-    public class SpriteCutAlgorithm
+    public class OneCutAlgorithm
     {
         #region Core Logic Flow
 
@@ -20,7 +20,7 @@ namespace SC.Main
         /// <param name="p_point1"></param>
         /// <param name="p_point2"></param>
         /// <returns></returns>
-        public SpriteCutter.CutResult CutSpriteToMesh(SpriteCutObject p_spriteObj, Vector2 selfPos, Vector2 p_point1, Vector2 p_point2)
+        public OneCut.CutResult CutSpriteToMesh(OneCutObject p_spriteObj, Vector2 selfPos, Vector2 p_point1, Vector2 p_point2)
         {
             List<Triangle> exp_trig = new List<Triangle>(p_spriteObj.triangles);
             List<Vector2> intersectionPoints = new List<Vector2>();
@@ -42,7 +42,7 @@ namespace SC.Main
             //always contain 2 trig result
             var segmentResult = ResegmentTriangle(newTrigCol, verticesSegmentor, selfPos);
 
-            return new SpriteCutter.CutResult(
+            return new OneCut.CutResult(
                 GetSprite(segmentResult[0]),
                 GetSprite(segmentResult[1]),
                 GetSprite(exp_trig),
@@ -54,10 +54,10 @@ namespace SC.Main
             //ResegmentVertices(vertices, verticesSegmentor);
         }
 
-        private SpriteCutter.Sprite GetSprite(List<Triangle> p_triangles) {
+        private OneCut.Sprite GetSprite(List<Triangle> p_triangles) {
             MeshBuilder meshBuilder = new MeshBuilder(p_triangles);
 
-            return new SpriteCutter.Sprite(p_triangles, meshBuilder.meshTrig, meshBuilder.meshVertices);
+            return new OneCut.Sprite(p_triangles, meshBuilder.meshTrig, meshBuilder.meshVertices);
         }
 
         private void HandleTrigIntersection(List<Vector2> intersectList, Triangle triangle, VerticesSegmentor verticesSegmentor, Vector2 selfPos, Vector2 p_pointA, Vector2 p_pointB)

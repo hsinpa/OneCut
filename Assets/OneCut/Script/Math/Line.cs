@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace SC.Math
+namespace OC.Math
 {
     public class Line
     {
