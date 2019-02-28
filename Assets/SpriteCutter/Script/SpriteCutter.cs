@@ -34,6 +34,7 @@ namespace SC.Main {
                 return null;
             }
         }
+        public bool debugMode = false;
 
         private SpriteCutAlgorithm mainAlgorithm;
         private Queue<TaskResult> results = new Queue<TaskResult>();
@@ -48,12 +49,6 @@ namespace SC.Main {
         ///// </summary>
         //[Range(0, 1)]
         //public float acceptedRatio = 1;
-
-        //For debug purpose
-        private List<Vector2> intersectionPoints = new List<Vector2>();
-        private List<Vector2> verticeSegmentOne;
-        private List<Vector2> verticeSegmentTwo;
-        private MeshBuilder meshBuilder;
         #endregion
 
         void Start()
@@ -74,6 +69,14 @@ namespace SC.Main {
 
         }
 
+        /// <summary>
+        /// Actual cutting mehtod
+        /// </summary>
+        /// <param name="p_spriteObj"></param>
+        /// <param name="objectPos">Transform.positon couldn;t be obtain inside Threading, so give it individually here</param>
+        /// <param name="p_point1"></param>
+        /// <param name="p_point2"></param>
+        /// <param name="p_callback"></param>
         private void RunCut(SpriteCutObject p_spriteObj, Vector2 objectPos, Vector2 p_point1, Vector2 p_point2, System.Action<CutResult, bool> p_callback) {
             List<Triangle> originalTrig = p_spriteObj.triangles;
             CutResult cutResult = mainAlgorithm.CutSpriteToMesh(p_spriteObj, objectPos, p_point1, p_point2);
@@ -86,6 +89,13 @@ namespace SC.Main {
             {
                 results.Enqueue(new TaskResult(cutResult, isSuccess, p_callback));
             }
+
+            if (debugMode)
+            {
+
+                p_spriteObj.SetDebugVaraible(cutResult.intersectionPoints, cutResult.mainSprite.meshVert, cutResult.subSprite.meshVert);
+            }
+
         }
 
 #if !UNITY_WEBGL
@@ -173,59 +183,5 @@ namespace SC.Main {
         }
         #endregion
 
-        #region Debug Functions
-        void OnDrawGizmosSelected()
-        {
-            // Draw a yellow sphere at the transform's position
-            if (intersectionPoints != null)
-            {
-                Gizmos.color = Color.yellow;
-                for (int i = 0; i < intersectionPoints.Count; i++)
-                {
-                    Gizmos.DrawSphere(intersectionPoints[i], 0.02f);
-                }
-            }
-
-            if (verticeSegmentOne != null)
-            {
-                Gizmos.color = Color.red;
-                for (int i = 0; i < verticeSegmentOne.Count; i++)
-                {
-                    Gizmos.DrawSphere(verticeSegmentOne[i], 0.03f);
-                }
-            }
-
-            if (verticeSegmentTwo != null)
-            {
-                Gizmos.color = Color.green;
-                for (int i = 0; i < verticeSegmentTwo.Count; i++)
-                {
-                    Gizmos.DrawSphere(verticeSegmentTwo[i], 0.03f);
-                }
-            }
-
-            int a, b, c;
-
-            if (meshBuilder != null)
-            {
-                Vector2 currentPos = new Vector2(transform.position.x, transform.position.y);
-                for (int i = 0; i < meshBuilder.meshTrig.Length; i = i + 3)
-                {
-                    Gizmos.color = Color.black;
-
-                    a = meshBuilder.meshTrig[i];
-                    b = meshBuilder.meshTrig[i + 1];
-                    c = meshBuilder.meshTrig[i + 2];
-
-                    Gizmos.DrawSphere(currentPos + meshBuilder.meshVertices[a], 0.01f);
-                    Gizmos.DrawSphere(currentPos + meshBuilder.meshVertices[b], 0.01f);
-                    Gizmos.DrawSphere(currentPos + meshBuilder.meshVertices[c], 0.01f);
-                }
-            }
-        }
-        #endregion
-
     }
-
-
 }

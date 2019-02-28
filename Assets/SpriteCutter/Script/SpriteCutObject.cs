@@ -16,6 +16,7 @@ namespace SC.Main
         }
         private SpriteRenderer _sr;
 
+        [HideInInspector]
         public Sprite sprite;
 
         public List<Triangle> triangles
@@ -48,8 +49,13 @@ namespace SC.Main
         private Vector2[] _meshVert;
 
         private Sprite backupSprite;
-               
-                #endregion
+
+        //For debug purpose
+        private List<Vector2> intersectionPoints = new List<Vector2>();
+        private Vector2[] verticeSegmentOne;
+        private Vector2[] verticeSegmentTwo;
+
+        #endregion
 
         void Start()
         {
@@ -131,6 +137,14 @@ namespace SC.Main
             AssignMesh(spriteVertices, p_meshTrig);
         }
 
+        public void SetDebugVaraible(List<Vector2> intersectionPoints, Vector2[] segmentOne, Vector2[] segmentTwo) {
+            this.intersectionPoints = intersectionPoints;
+
+            this.verticeSegmentOne = segmentOne;
+
+            this.verticeSegmentTwo = segmentTwo;
+        }
+
         private Vector2 VerticesToGeometryPos(Vector2 vertices, Sprite sprite)
         {
             Vector2 geometryPos = Vector2.zero;
@@ -162,22 +176,6 @@ namespace SC.Main
         }
 
         #region Debug Tool
-        void DrawTriangle(Vector2[] p_vertices, ushort[] p_triangles)
-        {
-            Vector2 currentPos = new Vector2(transform.position.x, transform.position.y);
-            int a, b, c;
-            for (int i = 0; i < p_triangles.Length; i = i + 3)
-            {
-                a = p_triangles[i];
-                b = p_triangles[i + 1];
-                c = p_triangles[i + 2];
-
-                //To see these you must view the game in the Scene tab while in Play mode
-                Debug.DrawLine(currentPos + p_vertices[a], currentPos + p_vertices[b], Color.red, 1);
-                Debug.DrawLine(currentPos + p_vertices[b], currentPos + p_vertices[c], Color.red, 1);
-                Debug.DrawLine(currentPos + p_vertices[c], currentPos + p_vertices[a], Color.red, 1);
-            }
-        }
 
         void DrawDebug(MeshBuilder p_meshBuilder)
         {
@@ -201,18 +199,39 @@ namespace SC.Main
             }
         }
 
-        void DrawTriangle(List<Triangle> p_triangle)
+
+        void OnDrawGizmosSelected()
         {
-            Vector2 currentPos = new Vector2(transform.position.x, transform.position.y);
-            //Debug.Log(triangles.Count);
-            for (int i = 0; i < p_triangle.Count; i++)
+            Vector2 currentPos = transform.position;
+            // Draw a yellow sphere at the transform's position
+            if (intersectionPoints != null)
             {
-                //To see these you must view the game in the Scene tab while in Play mode
-                Debug.DrawLine(currentPos + p_triangle[i].nodes[0], currentPos + p_triangle[i].nodes[1], Color.red, 1);
-                Debug.DrawLine(currentPos + p_triangle[i].nodes[1], currentPos + p_triangle[i].nodes[2], Color.red, 1);
-                Debug.DrawLine(currentPos + p_triangle[i].nodes[2], currentPos + p_triangle[i].nodes[0], Color.red, 1);
+                Gizmos.color = Color.yellow;
+                for (int i = 0; i < intersectionPoints.Count; i++)
+                {
+                    Gizmos.DrawSphere(intersectionPoints[i] + currentPos, 0.06f);
+                }
+            }
+
+            if (verticeSegmentOne != null)
+            {
+                Gizmos.color = Color.red;
+                for (int i = 0; i < verticeSegmentOne.Length; i++)
+                {
+                    Gizmos.DrawSphere(verticeSegmentOne[i] + currentPos, 0.04f);
+                }
+            }
+
+            if (verticeSegmentTwo != null)
+            {
+                Gizmos.color = Color.green;
+                for (int i = 0; i < verticeSegmentTwo.Length; i++)
+                {
+                    Gizmos.DrawSphere(verticeSegmentTwo[i] + currentPos, 0.04f);
+                }
             }
         }
+
         #endregion
 
 
