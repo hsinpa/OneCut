@@ -209,7 +209,9 @@ namespace OC.Main
                 Gizmos.color = Color.yellow;
                 for (int i = 0; i < intersectionPoints.Count; i++)
                 {
-                    Gizmos.DrawSphere(intersectionPoints[i] + currentPos, 0.06f);
+
+
+                    Gizmos.DrawSphere(intersectionPoints[i], 0.06f);
                 }
             }
 
