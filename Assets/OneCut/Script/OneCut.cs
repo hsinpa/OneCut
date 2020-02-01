@@ -70,7 +70,7 @@ namespace OC.Main {
 #if !UNITY_WEBGL
             RunCutAyns(delegate { RunCut(p_spriteObj, objectPos, p_point1, p_point2, p_callback); });
 #else
-            RunCut(p_spriteObj, p_point1, p_point2, p_callback);
+            RunCut(p_spriteObj, objectPos, p_point1, p_point2, p_callback);
 #endif
         }
 
