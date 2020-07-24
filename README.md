@@ -18,3 +18,5 @@ Include all the information need after cutting<br/>
   * Check debugMode, if you want to see where your cut take place
   * Method Cut is work under threading to prevent blocking ui thread
 
+## How to use
+<img src="https://i.imgur.com/poQb82j.jpg">
